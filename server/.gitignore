@@ -1,0 +1,24 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data
+data/
+public/uploads/
+
+# Go build and test artifacts
+/server
+*.exe
+*.test
+*.out
+coverage.*
+dist/
+build/
+tmp/
+
+# Editor and OS metadata
+.DS_Store
+.idea/
+.vscode/
+*.swp

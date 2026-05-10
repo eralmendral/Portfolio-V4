@@ -1,0 +1,187 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/eralme/server/internal/auth"
+	"github.com/eralme/server/internal/projects"
+)
+
+type config struct {
+	Addr           string
+	DataDir        string
+	UploadStorage  string
+	UploadDir      string
+	UploadBaseURL  string
+	SpacesBucket   string
+	SpacesRegion   string
+	SpacesEndpoint string
+	SpacesKey      string
+	SpacesSecret   string
+	SpacesBaseURL  string
+	SpacesACL      string
+	JWTSecret      string
+	JWTIssuer      string
+	TokenTTL       time.Duration
+	AdminUsername  string
+	AdminPassword  string
+	MaxUploadBytes int64
+}
+
+func main() {
+	cfg := loadConfig()
+
+	router, err := buildRouter(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	server := &http.Server{
+		Addr:              cfg.Addr,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	log.Printf("portfolio server listening on %s", cfg.Addr)
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatal(err)
+	}
+}
+
+func buildRouter(cfg config) (http.Handler, error) {
+	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTIssuer, cfg.TokenTTL)
+
+	store, err := projects.NewFileStore(filepath.Join(cfg.DataDir, "projects.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	assetStore, err := uploadStore(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	projectHandler := projects.NewHandler(store, projects.UploadConfig{
+		Store:    assetStore,
+		MaxBytes: cfg.MaxUploadBytes,
+	})
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.Handle("POST /auth/login", auth.LoginHandler(tokenService, cfg.AdminUsername, cfg.AdminPassword))
+
+	requireJWT := auth.RequireJWT(tokenService)
+	mux.Handle("GET /projects", requireJWT(http.HandlerFunc(projectHandler.HandleCollection)))
+	mux.Handle("POST /projects", requireJWT(http.HandlerFunc(projectHandler.HandleCollection)))
+	mux.Handle("/projects/", requireJWT(http.HandlerFunc(projectHandler.HandleItem)))
+
+	if cfg.UploadStorage == "local" && cfg.UploadDir != "" {
+		mux.Handle("/uploads/projects/", http.StripPrefix("/uploads/projects/", http.FileServer(http.Dir(cfg.UploadDir))))
+	}
+
+	return withCommonHeaders(mux), nil
+}
+
+func loadConfig() config {
+	secret := getenv("JWT_SECRET", "development-secret-change-me")
+	if secret == "development-secret-change-me" {
+		log.Print("JWT_SECRET is not set; using an insecure development secret")
+	}
+
+	return config{
+		Addr:           getenv("ADDR", ":8080"),
+		DataDir:        getenv("DATA_DIR", "data"),
+		UploadStorage:  strings.ToLower(getenv("UPLOAD_STORAGE", "local")),
+		UploadDir:      getenv("UPLOAD_DIR", filepath.Join("public", "uploads", "projects")),
+		UploadBaseURL:  getenv("UPLOAD_BASE_URL", "/uploads/projects"),
+		SpacesBucket:   os.Getenv("DO_SPACES_BUCKET"),
+		SpacesRegion:   os.Getenv("DO_SPACES_REGION"),
+		SpacesEndpoint: os.Getenv("DO_SPACES_ENDPOINT"),
+		SpacesKey:      os.Getenv("DO_SPACES_KEY"),
+		SpacesSecret:   os.Getenv("DO_SPACES_SECRET"),
+		SpacesBaseURL:  os.Getenv("DO_SPACES_PUBLIC_BASE_URL"),
+		SpacesACL:      getenv("DO_SPACES_ACL", "public-read"),
+		JWTSecret:      secret,
+		JWTIssuer:      getenv("JWT_ISSUER", "portfolio-server"),
+		TokenTTL:       durationFromEnv("TOKEN_TTL", 24*time.Hour),
+		AdminUsername:  os.Getenv("ADMIN_USERNAME"),
+		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
+		MaxUploadBytes: int64FromEnv("MAX_UPLOAD_BYTES", 300<<20),
+	}
+}
+
+func uploadStore(cfg config) (projects.AssetStore, error) {
+	switch cfg.UploadStorage {
+	case "", "local":
+		return projects.LocalAssetStore{
+			Dir:     cfg.UploadDir,
+			BaseURL: cfg.UploadBaseURL,
+		}, nil
+	case "spaces", "digitalocean", "digitalocean-spaces":
+		store := projects.SpacesAssetStore{
+			Bucket:          cfg.SpacesBucket,
+			Region:          cfg.SpacesRegion,
+			Endpoint:        cfg.SpacesEndpoint,
+			AccessKeyID:     cfg.SpacesKey,
+			SecretAccessKey: cfg.SpacesSecret,
+			PublicBaseURL:   cfg.SpacesBaseURL,
+			ACL:             cfg.SpacesACL,
+		}
+		return store, store.Validate()
+	default:
+		return nil, fmt.Errorf("unsupported UPLOAD_STORAGE %q", cfg.UploadStorage)
+	}
+}
+
+func withCommonHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func getenv(key string, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
+}
+
+func durationFromEnv(key string, fallback time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := time.ParseDuration(value)
+	if err != nil {
+		log.Printf("invalid %s=%q; using %s", key, value, fallback)
+		return fallback
+	}
+
+	return parsed
+}
+
+func int64FromEnv(key string, fallback int64) int64 {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		log.Printf("invalid %s=%q; using %d", key, value, fallback)
+		return fallback
+	}
+
+	return parsed
+}
