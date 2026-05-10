@@ -1,0 +1,513 @@
+:root {
+  background-color: #f5f6f8;
+  color: #17202a;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+text,
+input,
+textarea {
+  color: #17202a;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+view {
+  box-sizing: border-box;
+}
+
+.LoginScreen {
+  min-height: 100vh;
+  width: 100vw;
+  background: #eef1f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.LoginPanel {
+  width: 420px;
+  max-width: 100%;
+  background: #ffffff;
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 20px 48px rgba(26, 38, 52, 0.12);
+}
+
+.LoginTitle {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.AppRoot {
+  min-height: 100vh;
+  width: 100vw;
+  background: #f5f6f8;
+  display: flex;
+  flex-direction: column;
+}
+
+.TopBar {
+  min-height: 72px;
+  padding: 14px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #dde2e8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.TopActions,
+.EditorActions,
+.InlineActions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.Eyebrow {
+  color: #5d6a78;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.AppTitle {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.Toolbar {
+  padding: 14px 24px;
+  border-bottom: 1px solid #dde2e8;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  background: #fafbfc;
+}
+
+.ToolbarSpacer {
+  flex: 1;
+}
+
+.Workspace {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+}
+
+.ListPane {
+  border-right: 1px solid #dde2e8;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.EditorPane {
+  background: #f5f6f8;
+  height: calc(100vh - 129px);
+}
+
+.Filters {
+  border-bottom: 1px solid #dde2e8;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.FilterRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.FilterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.FieldStack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.Field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.Field--wide {
+  grid-column: span 2;
+}
+
+.FieldLabel {
+  color: #5d6a78;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.Input,
+.TextArea {
+  width: 100%;
+  border: 1px solid #cfd6df;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 14px;
+  padding: 10px 12px;
+  min-height: 40px;
+}
+
+.TextArea {
+  min-height: 92px;
+}
+
+.Segmented {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  border: 1px solid #cfd6df;
+  border-radius: 7px;
+  background: #eef1f4;
+  padding: 3px;
+  gap: 3px;
+}
+
+.SegmentedItem {
+  min-height: 30px;
+  padding: 7px 10px;
+  border-radius: 5px;
+  color: #526170;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.SegmentedItem--active {
+  background: #ffffff;
+  color: #102235;
+  box-shadow: 0 1px 2px rgba(26, 38, 52, 0.12);
+}
+
+.Button {
+  min-height: 36px;
+  padding: 9px 13px;
+  border-radius: 6px;
+  border: 1px solid #c7d0da;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.Button--primary {
+  background: #156c5f;
+  border-color: #156c5f;
+  color: #ffffff;
+}
+
+.Button--secondary {
+  background: #ffffff;
+  color: #102235;
+}
+
+.Button--ghost {
+  background: transparent;
+  color: #334152;
+}
+
+.Button--danger {
+  background: #fff3f1;
+  border-color: #f0b9b0;
+  color: #a33222;
+}
+
+.Button--disabled {
+  opacity: 0.5;
+}
+
+.RecordList {
+  flex: 1;
+  min-height: 0;
+}
+
+.RecordItem {
+  padding: 14px 16px;
+  border-bottom: 1px solid #edf0f3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.RecordItem--active {
+  background: #f1f7f5;
+  border-left: 4px solid #156c5f;
+  padding-left: 12px;
+}
+
+.RecordHeader {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.RecordTitle {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.RecordMeta,
+.RecordSummary,
+.MutedText {
+  color: #5d6a78;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.RecordSummary {
+  color: #344253;
+}
+
+.TagRow {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.MiniPill,
+.StatusPill {
+  border-radius: 999px;
+  border: 1px solid #d1d8e0;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #4a5969;
+  background: #ffffff;
+}
+
+.StatusPill--published {
+  background: #e7f4ed;
+  border-color: #b9dfca;
+  color: #16653e;
+}
+
+.StatusPill--draft {
+  background: #fff7e7;
+  border-color: #ead59c;
+  color: #7a5a00;
+}
+
+.StatusPill--archived {
+  background: #f0f2f5;
+  border-color: #d5dbe3;
+  color: #626f7f;
+}
+
+.Editor {
+  padding: 22px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.EditorHeader {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.EditorTitle {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.FormGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.FormGrid--compact {
+  margin-top: 12px;
+}
+
+.ToggleField {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ToggleTrack {
+  width: 156px;
+  min-height: 40px;
+  border-radius: 20px;
+  border: 1px solid #cfd6df;
+  background: #eef1f4;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+}
+
+.ToggleKnob {
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background: #9ba7b4;
+}
+
+.ToggleKnob--on {
+  background: #156c5f;
+}
+
+.ToggleText {
+  color: #334152;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.UploadPanel,
+.ErrorPanel {
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.SectionTitle {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.ImageGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ImageCard {
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ImagePreview {
+  height: 180px;
+  background: #e8edf2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.PreviewImage {
+  width: 100%;
+  height: 180px;
+}
+
+.ImageMeta {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ImageCard .Button {
+  margin: 0 12px 12px;
+}
+
+.ErrorPanel {
+  background: #fff8f7;
+  border-color: #efc0b8;
+}
+
+.ErrorTitle {
+  color: #992b1e;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.ErrorDetail {
+  color: #6d322b;
+  font-size: 12px;
+}
+
+.StateBlock {
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.StateBlock--compact {
+  min-height: 160px;
+  border: 1px dashed #cbd3dd;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+@media (max-width: 860px) {
+  .TopBar,
+  .Toolbar,
+  .EditorHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .Workspace {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ListPane {
+    border-right: 0;
+    border-bottom: 1px solid #dde2e8;
+    max-height: 46vh;
+  }
+
+  .EditorPane {
+    height: auto;
+  }
+
+  .FormGrid,
+  .ImageGrid {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .Field--wide {
+    grid-column: auto;
+  }
+
+  .ToolbarSpacer {
+    display: none;
+  }
+}
