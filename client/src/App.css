@@ -1,14 +1,16 @@
 :root {
   background-color: #f5f6f8;
   color: #17202a;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Onest", sans-serif;
+  font-optical-sizing: auto;
 }
 
 text,
 input,
 textarea {
   color: #17202a;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Onest", sans-serif;
+  font-optical-sizing: auto;
   letter-spacing: 0;
 }
 
@@ -479,27 +481,52 @@ view {
   width: 100vw;
   overflow-y: auto;
   background: #f7f8f5;
+  transition: background-color 220ms ease, color 220ms ease;
 }
 
-.PublicNav {
-  min-height: 64px;
-  padding: 16px 28px;
-  border-bottom: 1px solid #dfe3df;
-  background: rgba(247, 248, 245, 0.96);
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+.PublicPage--light {
+  background: #f7f8f5;
 }
 
-.PublicBrand {
-  color: #14201d;
-  font-size: 16px;
+.PublicPage--dark {
+  background: #101416;
+}
+
+.PublicThemeToggle {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 20;
+  min-height: 38px;
+  padding: 10px 14px;
+  border: 1px solid #cfd8d1;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(20, 32, 29, 0.16);
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.PublicThemeToggle:hover {
+  transform: translateY(-1px);
+}
+
+.PublicThemeToggleText {
+  color: #1d594d;
+  font-size: 12px;
   font-weight: 900;
+  transition: color 180ms ease;
 }
 
-.PublicNavActions,
+.PublicPage--dark .PublicThemeToggle {
+  border-color: #33413d;
+  background: #1b2326;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34);
+}
+
+.PublicPage--dark .PublicThemeToggleText {
+  color: #d8ece4;
+}
+
 .PublicHeroActions {
   display: flex;
   flex-direction: row;
@@ -508,37 +535,30 @@ view {
   gap: 10px;
 }
 
-.PublicNavLink {
-  color: #1d594d;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.PublicNavLink--muted {
-  color: #6b746f;
-}
-
 .PublicHero {
   width: 100%;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 56px 28px 36px;
+  padding: 78px 28px 36px;
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
   align-items: center;
   gap: 40px;
+  animation: publicFadeUp 420ms ease both;
 }
 
 .PublicHeroCopy {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  animation: publicFadeUp 520ms ease 80ms both;
 }
 
 .PublicEyebrow {
   color: #b24d2d;
   font-size: 12px;
   font-weight: 900;
+  transition: color 220ms ease;
 }
 
 .PublicTitle {
@@ -546,6 +566,7 @@ view {
   font-size: 56px;
   font-weight: 900;
   line-height: 1;
+  transition: color 220ms ease;
 }
 
 .PublicLead {
@@ -553,6 +574,7 @@ view {
   max-width: 680px;
   font-size: 20px;
   line-height: 1.45;
+  transition: color 220ms ease;
 }
 
 .PublicPortraitWrap {
@@ -562,6 +584,13 @@ view {
   overflow: hidden;
   background: #dde8df;
   border: 1px solid #d0d8d2;
+  animation: publicScaleIn 560ms ease 120ms both;
+  transition: background-color 220ms ease, border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
+}
+
+.PublicPortraitWrap:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 48px rgba(20, 32, 29, 0.16);
 }
 
 .PublicPortrait,
@@ -575,52 +604,84 @@ view {
   align-items: center;
   justify-content: center;
   background: #dce8e2;
+  transition: background-color 220ms ease;
 }
 
 .PublicPortraitInitials {
   color: #1d594d;
   font-size: 64px;
   font-weight: 900;
+  transition: color 220ms ease;
 }
 
-.PublicStats {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 28px 24px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+.PublicPage--dark .PublicEyebrow {
+  color: #f0a17d;
 }
 
-.PublicStat,
+.PublicPage--dark .PublicTitle,
+.PublicPage--dark .PublicSectionTitle,
+.PublicPage--dark .PublicPanelTitle {
+  color: #f1f5f2;
+}
+
+.PublicPage--dark .PublicLead,
+.PublicPage--dark .PublicSectionSubtitle,
+.PublicPage--dark .PublicPanelText {
+  color: #bac8c2;
+}
+
+.PublicPage--dark .PublicPanelMeta {
+  color: #f0a17d;
+}
+
+.PublicPage--dark .PublicPortraitWrap,
+.PublicPage--dark .PublicProjectCard,
+.PublicPage--dark .PublicPanel,
+.PublicPage--dark .PublicTimelineItem,
+.PublicPage--dark .PublicNotice {
+  border-color: #2f3b38;
+  background: #182023;
+}
+
+.PublicPage--dark .PublicPortraitFallback,
+.PublicPage--dark .PublicProjectImage--empty {
+  background: #202b2f;
+}
+
+.PublicPage--dark .PublicPortraitInitials,
+.PublicPage--dark .PublicProjectInitial {
+  color: #9ed8c7;
+}
+
+.PublicPage--dark .PublicPill {
+  border-color: #3a4845;
+  background: #202a2d;
+  color: #d0ddd8;
+}
+
+.PublicPage--dark .PublicPill--featured {
+  border-color: #4f8d7c;
+  background: #18332f;
+  color: #b7e6d8;
+}
+
+.PublicPage--dark .Button--primary {
+  background: #2d8d7a;
+  border-color: #2d8d7a;
+  color: #ffffff;
+}
+
 .PublicNotice {
   border: 1px solid #dfe3df;
   border-radius: 8px;
   background: #ffffff;
   padding: 18px;
+  transition: background-color 220ms ease, border-color 220ms ease;
 }
 
 .PublicNotice {
   max-width: 1180px;
   margin: 0 auto 18px;
-}
-
-.PublicStat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.PublicStatValue {
-  color: #14201d;
-  font-size: 28px;
-  font-weight: 900;
-}
-
-.PublicStatLabel {
-  color: #66736e;
-  font-size: 12px;
-  font-weight: 800;
 }
 
 .PublicSection {
@@ -630,6 +691,15 @@ view {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  animation: publicFadeUp 520ms ease both;
+}
+
+.PublicSection:nth-of-type(2) {
+  animation-delay: 120ms;
+}
+
+.PublicSection:nth-of-type(3) {
+  animation-delay: 220ms;
 }
 
 .PublicSectionHeader {
@@ -643,6 +713,7 @@ view {
   font-size: 28px;
   font-weight: 900;
   line-height: 1.15;
+  transition: color 220ms ease;
 }
 
 .PublicSectionSubtitle,
@@ -651,19 +722,13 @@ view {
   color: #56645f;
   font-size: 14px;
   line-height: 1.45;
+  transition: color 220ms ease;
 }
 
-.PublicCardGrid,
-.PublicSkillGrid,
-.PublicToolGrid {
+.PublicCardGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-}
-
-.PublicSkillGrid,
-.PublicToolGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .PublicProjectCard,
@@ -673,6 +738,13 @@ view {
   border-radius: 8px;
   background: #ffffff;
   overflow: hidden;
+  transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.PublicProjectCard:hover,
+.PublicTimelineItem:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 42px rgba(20, 32, 29, 0.12);
 }
 
 .PublicProjectBody,
@@ -687,6 +759,11 @@ view {
 .PublicProjectImage {
   width: 100%;
   height: 190px;
+  transition: transform 420ms ease;
+}
+
+.PublicProjectCard:hover .PublicProjectImage {
+  transform: scale(1.035);
 }
 
 .PublicProjectImage--empty {
@@ -694,12 +771,14 @@ view {
   align-items: center;
   justify-content: center;
   background: #e7ece8;
+  transition: background-color 220ms ease;
 }
 
 .PublicProjectInitial {
   color: #1d594d;
   font-size: 42px;
   font-weight: 900;
+  transition: color 220ms ease;
 }
 
 .PublicPanelTitle {
@@ -707,6 +786,7 @@ view {
   font-size: 17px;
   font-weight: 900;
   line-height: 1.25;
+  transition: color 220ms ease;
 }
 
 .PublicPanelMeta {
@@ -722,6 +802,11 @@ view {
   color: #495752;
   font-size: 12px;
   font-weight: 800;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.PublicPill:hover {
+  transform: translateY(-1px);
 }
 
 .PublicPill--featured {
@@ -734,6 +819,59 @@ view {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+@keyframes publicFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes publicScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .PublicPage,
+  .PublicThemeToggle,
+  .PublicThemeToggleText,
+  .PublicHero,
+  .PublicHeroCopy,
+  .PublicEyebrow,
+  .PublicTitle,
+  .PublicLead,
+  .PublicPortraitWrap,
+  .PublicPortraitFallback,
+  .PublicPortraitInitials,
+  .PublicNotice,
+  .PublicSection,
+  .PublicSectionTitle,
+  .PublicSectionSubtitle,
+  .PublicPanelText,
+  .PublicPanelMeta,
+  .PublicProjectCard,
+  .PublicPanel,
+  .PublicTimelineItem,
+  .PublicProjectImage,
+  .PublicProjectImage--empty,
+  .PublicProjectInitial,
+  .PublicPanelTitle,
+  .PublicPill {
+    animation: none;
+    transition: none;
+  }
 }
 
 @media (max-width: 860px) {
@@ -773,15 +911,19 @@ view {
     display: none;
   }
 
-  .PublicNav,
   .PublicHero {
     display: flex;
     flex-direction: column;
     align-items: stretch;
   }
 
+  .PublicThemeToggle {
+    top: 14px;
+    right: 14px;
+  }
+
   .PublicHero {
-    padding-top: 34px;
+    padding-top: 72px;
   }
 
   .PublicTitle {
@@ -792,10 +934,7 @@ view {
     font-size: 17px;
   }
 
-  .PublicStats,
   .PublicCardGrid,
-  .PublicSkillGrid,
-  .PublicToolGrid,
   .PublicTimeline {
     display: flex;
     flex-direction: column;

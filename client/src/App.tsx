@@ -319,27 +319,20 @@ const emptyIntroForm: IntroForm = {
 }
 
 type AppRoute = 'public' | 'admin'
+type PublicTheme = 'light' | 'dark'
 
 interface PublicData {
   intro: Intro | null
   projects: Project[]
-  certificates: Certificate[]
   workExperiences: WorkExperience[]
   links: Link[]
-  skillCategories: SkillCategory[]
-  skills: Skill[]
-  tools: Tool[]
 }
 
 const emptyPublicData: PublicData = {
   intro: null,
   projects: [],
-  certificates: [],
   workExperiences: [],
   links: [],
-  skillCategories: [],
-  skills: [],
-  tools: [],
 }
 
 export function App() {
@@ -364,14 +357,19 @@ export function App() {
     return <AdminApp onViewPublic={() => navigate('public')} />
   }
 
-  return <PublicHome onAdmin={() => navigate('admin')} />
+  return <PublicHome />
 }
 
-function PublicHome({ onAdmin }: { onAdmin: () => void }) {
+function PublicHome() {
   const [data, setData] = useState<PublicData>(emptyPublicData)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [theme, setTheme] = useState<PublicTheme>('light')
   const api = useMemo(() => createApiClient(() => null), [])
+
+  useEffect(() => {
+    injectOnestFontLinks()
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -382,21 +380,13 @@ function PublicHome({ onAdmin }: { onAdmin: () => void }) {
       const [
         intro,
         projects,
-        certificates,
         workExperiences,
         links,
-        skillCategories,
-        skills,
-        tools,
       ] = await Promise.all([
         optionalResult(api.getIntro(), null),
         optionalResult(api.listProjects({ q: '', status: 'published', featured: 'all' }), []),
-        optionalResult(api.listCertificates({ q: '', status: 'published', featured: 'all' }), []),
         optionalResult(api.listWorkExperiences({ q: '', status: 'published', featured: 'all', current: 'all' }), []),
         optionalResult(api.listLinks({ q: '', status: 'published', star: 'all' }), []),
-        optionalResult(api.listSkillCategories({ q: '', status: 'published' }), []),
-        optionalResult(api.listSkills({ q: '', status: 'published', featured: 'all', category_id: '', category: '' }), []),
-        optionalResult(api.listTools({ q: '', status: 'published', featured: 'all', category: '', tag: '' }), []),
       ])
 
       if (cancelled) return
@@ -404,14 +394,10 @@ function PublicHome({ onAdmin }: { onAdmin: () => void }) {
       setData({
         intro,
         projects,
-        certificates,
         workExperiences,
         links,
-        skillCategories,
-        skills,
-        tools,
       })
-      if (!intro && projects.length === 0 && skills.length === 0 && tools.length === 0) {
+      if (!intro && projects.length === 0 && workExperiences.length === 0) {
         setError('Published portfolio content is not available yet.')
       }
       setLoading(false)
@@ -430,29 +416,13 @@ function PublicHome({ onAdmin }: { onAdmin: () => void }) {
 
   const visibleProjects = [...data.projects].sort(byFeaturedThenProjectOrder).slice(0, 3)
   const starredLinks = data.links.filter(link => link.star).slice(0, 4)
-  const skillGroups = data.skillCategories
-    .map(category => ({
-      category,
-      skills: data.skills
-        .filter(skill => skill.category_id === category.id)
-        .sort(byFeaturedThenOrder),
-    }))
-    .filter(group => group.skills.length > 0)
-    .slice(0, 5)
-  const toolGroups = groupByCategory(data.tools).slice(0, 5)
+  const nextTheme = theme === 'dark' ? 'light' : 'dark'
 
   return (
-    <scroll-view className='PublicPage' scroll-y>
-      <view className='PublicNav'>
-        <text className='PublicBrand'>Eric Almendral</text>
-        <view className='PublicNavActions'>
-          {starredLinks.map(link => (
-            <text key={link.id} className='PublicNavLink' bindtap={() => openExternal(link.url)}>{link.label}</text>
-          ))}
-          <text className='PublicNavLink PublicNavLink--muted' bindtap={onAdmin}>Admin</text>
-        </view>
+    <scroll-view className={theme === 'dark' ? 'PublicPage PublicPage--dark' : 'PublicPage PublicPage--light'} scroll-y>
+      <view className='PublicThemeToggle' bindtap={() => setTheme(nextTheme)}>
+        <text className='PublicThemeToggleText'>{nextTheme === 'dark' ? 'Dark mode' : 'Light mode'}</text>
       </view>
-
       <view className='PublicHero'>
         <view className='PublicHeroCopy'>
           <text className='PublicEyebrow'>AI ENGINEER</text>
@@ -480,50 +450,10 @@ function PublicHome({ onAdmin }: { onAdmin: () => void }) {
       {loading ? <StateBlock title='Loading portfolio...' /> : null}
       {error ? <view className='PublicNotice'><text className='MutedText'>{error}</text></view> : null}
 
-      <view className='PublicStats'>
-        <PublicStat value={data.projects.length} label='Projects' />
-        <PublicStat value={data.skills.length} label='Skills' />
-        <PublicStat value={data.tools.length} label='Tools' />
-        <PublicStat value={data.workExperiences.length} label='Experience' />
-      </view>
-
-      <PublicSection title='Selected Work' subtitle='Featured shipped systems and product-facing engineering.'>
+      <PublicSection title='Projects' subtitle='Featured shipped systems and product-facing engineering.'>
         <view className='PublicCardGrid'>
           {visibleProjects.map(project => <ProjectCard key={project.id} project={project} />)}
           {!loading && visibleProjects.length === 0 ? <StateBlock title='No published projects yet.' compact /> : null}
-        </view>
-      </PublicSection>
-
-      <PublicSection title='Skills' subtitle='Grouped by capability so recruiters can scan the strongest fit quickly.'>
-        <view className='PublicSkillGrid'>
-          {skillGroups.map(group => (
-            <view key={group.category.id} className='PublicPanel'>
-              <text className='PublicPanelTitle'>{group.category.name}</text>
-              <text className='PublicPanelText'>{group.category.description || 'Focused engineering capability.'}</text>
-              <view className='TagRow'>
-                {group.skills.slice(0, 8).map(skill => (
-                  <text key={skill.id} className={skill.featured ? 'PublicPill PublicPill--featured' : 'PublicPill'}>{skill.name}</text>
-                ))}
-              </view>
-            </view>
-          ))}
-          {!loading && skillGroups.length === 0 ? <StateBlock title='No published skills yet.' compact /> : null}
-        </view>
-      </PublicSection>
-
-      <PublicSection title='Tools' subtitle='The software and platforms used for implementation, testing, and delivery.'>
-        <view className='PublicToolGrid'>
-          {toolGroups.map(group => (
-            <view key={group.category} className='PublicPanel'>
-              <text className='PublicPanelTitle'>{group.category}</text>
-              <view className='TagRow'>
-                {group.items.slice(0, 10).map(tool => (
-                  <text key={tool.id} className={tool.featured ? 'PublicPill PublicPill--featured' : 'PublicPill'}>{tool.name}</text>
-                ))}
-              </view>
-            </view>
-          ))}
-          {!loading && toolGroups.length === 0 ? <StateBlock title='No published tools yet.' compact /> : null}
         </view>
       </PublicSection>
 
@@ -542,20 +472,6 @@ function PublicHome({ onAdmin }: { onAdmin: () => void }) {
           {!loading && data.workExperiences.length === 0 ? <StateBlock title='No published experience yet.' compact /> : null}
         </view>
       </PublicSection>
-
-      {data.certificates.length > 0 ? (
-        <PublicSection title='Proof Points' subtitle='Certifications that support the portfolio.'>
-          <view className='PublicCardGrid'>
-            {data.certificates.slice(0, 2).map(certificate => (
-              <view key={certificate.id} className='PublicPanel'>
-                <text className='PublicPanelTitle'>{certificate.title}</text>
-                <text className='PublicPanelMeta'>{certificate.issuer}</text>
-                <text className='PublicPanelText'>{certificate.summary || certificate.description || 'Published credential.'}</text>
-              </view>
-            ))}
-          </view>
-        </PublicSection>
-      ) : null}
     </scroll-view>
   )
 }
@@ -1218,15 +1134,6 @@ function AdminApp({ onViewPublic }: { onViewPublic: () => void }) {
           ) : null}
         </scroll-view>
       </view>
-    </view>
-  )
-}
-
-function PublicStat({ value, label }: { value: number, label: string }) {
-  return (
-    <view className='PublicStat'>
-      <text className='PublicStatValue'>{String(value)}</text>
-      <text className='PublicStatLabel'>{label}</text>
     </view>
   )
 }
@@ -2132,32 +2039,11 @@ async function optionalResult<T>(promise: Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-function byFeaturedThenOrder<T extends { featured: boolean, sort_order: number, name: string }>(first: T, second: T): number {
-  if (first.featured !== second.featured) {
-    return first.featured ? -1 : 1
-  }
-  return first.sort_order - second.sort_order || first.name.localeCompare(second.name)
-}
-
 function byFeaturedThenProjectOrder(first: Project, second: Project): number {
   if (first.featured !== second.featured) {
     return first.featured ? -1 : 1
   }
   return first.sort_order - second.sort_order || first.title.localeCompare(second.title)
-}
-
-function groupByCategory(tools: Tool[]): Array<{ category: string, items: Tool[] }> {
-  const groups = new Map<string, Tool[]>()
-  for (const tool of tools) {
-    const category = tool.category || 'Tools'
-    const items = groups.get(category) ?? []
-    items.push(tool)
-    groups.set(category, items)
-  }
-
-  return Array.from(groups.entries())
-    .map(([category, items]) => ({ category, items: items.sort(byFeaturedThenOrder) }))
-    .sort((first, second) => first.category.localeCompare(second.category))
 }
 
 function dateRange(startedAt?: string, endedAt?: string, current?: boolean): string {
@@ -2206,6 +2092,43 @@ function browserWindow(): Window | undefined {
   return (globalThis as typeof globalThis & { window?: Window }).window
 }
 
+function injectOnestFontLinks(): void {
+  const documentRef = browserWindow()?.document
+  if (!documentRef?.head) return
+
+  const links: Array<{ id: string, rel: string, href: string, crossorigin?: string }> = [
+    {
+      id: 'font-preconnect-googleapis',
+      rel: 'preconnect',
+      href: 'https://fonts.googleapis.com',
+    },
+    {
+      id: 'font-preconnect-gstatic',
+      rel: 'preconnect',
+      href: 'https://fonts.gstatic.com',
+      crossorigin: '',
+    },
+    {
+      id: 'font-onest-stylesheet',
+      rel: 'stylesheet',
+      href: 'https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap',
+    },
+  ]
+
+  for (const item of links) {
+    if (documentRef.getElementById(item.id)) continue
+
+    const link = documentRef.createElement('link')
+    link.id = item.id
+    link.rel = item.rel
+    link.href = item.href
+    if (item.crossorigin !== undefined) {
+      link.setAttribute('crossorigin', item.crossorigin)
+    }
+    documentRef.head.appendChild(link)
+  }
+}
+
 function openExternal(url: string): void {
   const trimmed = url.trim()
   if (!trimmed) return
@@ -2223,12 +2146,7 @@ function openExternal(url: string): void {
 function canRenderPublicImage(url?: string): boolean {
   if (!url) return false
   if (url.startsWith('data:')) return true
-  if (!/^https?:\/\//i.test(url)) {
-    return false
-  }
-
-  const windowRef = browserWindow()
-  return !!windowRef && url.startsWith(windowRef.location.origin)
+  return /^https?:\/\//i.test(url)
 }
 
 function confirmAction(message: string): boolean {
