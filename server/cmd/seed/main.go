@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/eralme/server/internal/certificates"
+	"github.com/eralme/server/internal/intro"
 	"github.com/eralme/server/internal/projects"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -41,6 +42,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("migrate certificates postgres: %v", err)
 	}
+	introStore, err := intro.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate intro postgres: %v", err)
+	}
 
 	projectSamples := sampleProjects()
 	for _, project := range projectSamples {
@@ -68,7 +73,12 @@ func main() {
 		}
 	}
 
-	fmt.Printf("seeded %d sample projects and %d sample certificates\n", len(projectSamples), len(certificateSamples))
+	introSample := sampleIntro()
+	if _, err := introStore.Save(ctx, introSample); err != nil {
+		log.Fatalf("save intro sample: %v", err)
+	}
+
+	fmt.Printf("seeded %d sample projects, %d sample certificates, and intro\n", len(projectSamples), len(certificateSamples))
 }
 
 func deleteProjectIfExists(ctx context.Context, store projects.Store, idOrSlug string) error {
@@ -228,5 +238,23 @@ func sampleCertificates() []certificates.Certificate {
 			IssuedAt:  &secondIssuedAt,
 			CreatedAt: secondIssuedAt,
 		},
+	}
+}
+
+func sampleIntro() intro.Intro {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return intro.Intro{
+		ID:          intro.DefaultID,
+		Title:       "Software Engineer",
+		Description: "I build backend systems, polished web experiences, and portfolio tools that are practical to operate.",
+		ProfilePicture: &intro.IntroImage{
+			ID:         "sample-intro-profile-picture",
+			URL:        "https://picsum.photos/seed/profile-picture/1200/1200",
+			AltText:    "Profile portrait",
+			Caption:    "Portfolio profile picture",
+			UploadedAt: createdAt,
+		},
+		CreatedAt: createdAt,
 	}
 }

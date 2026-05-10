@@ -14,6 +14,7 @@ import (
 
 	"github.com/eralme/server/internal/auth"
 	"github.com/eralme/server/internal/certificates"
+	"github.com/eralme/server/internal/intro"
 	"github.com/eralme/server/internal/projects"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -61,7 +62,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	router, err := buildRouter(cfg, projectStore, certificateStore)
+	introStore, err := intro.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	router, err := buildRouter(cfg, projectStore, certificateStore, introStore)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,7 +84,7 @@ func main() {
 	}
 }
 
-func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store) (http.Handler, error) {
+func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, introStore intro.Store) (http.Handler, error) {
 	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTIssuer, cfg.TokenTTL)
 
 	assetStore, err := uploadStore(cfg)
@@ -91,6 +97,10 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 		MaxBytes: cfg.MaxUploadBytes,
 	})
 	certificateHandler := certificates.NewHandler(certificateStore, certificates.UploadConfig{
+		Store:    assetStore,
+		MaxBytes: cfg.MaxUploadBytes,
+	})
+	introHandler := intro.NewHandler(introStore, intro.UploadConfig{
 		Store:    assetStore,
 		MaxBytes: cfg.MaxUploadBytes,
 	})
@@ -108,6 +118,8 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	mux.Handle("GET /certificates", requireJWT(http.HandlerFunc(certificateHandler.HandleCollection)))
 	mux.Handle("POST /certificates", requireJWT(http.HandlerFunc(certificateHandler.HandleCollection)))
 	mux.Handle("/certificates/", requireJWT(http.HandlerFunc(certificateHandler.HandleItem)))
+	mux.Handle("/intro", requireJWT(http.HandlerFunc(introHandler.Handle)))
+	mux.Handle("/intro/profile-picture", requireJWT(http.HandlerFunc(introHandler.HandleProfilePicture)))
 
 	if cfg.UploadStorage == "local" && cfg.UploadDir != "" {
 		mux.Handle("/uploads/projects/", http.StripPrefix("/uploads/projects/", http.FileServer(http.Dir(cfg.UploadDir))))

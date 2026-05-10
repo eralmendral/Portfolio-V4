@@ -750,6 +750,174 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Intro",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Intro",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/intro",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "intro"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Intro",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Software Engineer\",\n  \"description\": \"I build backend systems, polished web experiences, and portfolio tools that are practical to operate.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/intro",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "intro"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Intro",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/intro",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "intro"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Profile Picture",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"profile picture uploaded\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.profile_picture && body.profile_picture.id) {",
+                  "  pm.collectionVariables.set(\"intro_profile_picture_id\", body.profile_picture.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "{{intro_profile_picture_path}}"
+                },
+                {
+                  "key": "alt_text",
+                  "value": "Uploaded profile picture",
+                  "type": "text"
+                },
+                {
+                  "key": "caption",
+                  "value": "Uploaded through Postman",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/intro/profile-picture",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "intro",
+                "profile-picture"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Profile Picture",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/intro/profile-picture",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "intro",
+                "profile-picture"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
@@ -819,6 +987,14 @@
     },
     {
       "key": "certificate_image_path",
+      "value": ""
+    },
+    {
+      "key": "intro_profile_picture_id",
+      "value": ""
+    },
+    {
+      "key": "intro_profile_picture_path",
       "value": ""
     }
   ]
