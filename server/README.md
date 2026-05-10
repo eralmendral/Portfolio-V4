@@ -37,7 +37,7 @@ docker compose up --build
 The API listens on `http://localhost:8080`, and PostgreSQL is exposed on
 `localhost:5433` by default to avoid conflicts with a local Postgres instance.
 Set `POSTGRES_HOST_PORT=5432` if you want Compose to bind host port `5432`.
-Project, certificate, article, work experience, skill, link, tool, and intro
+Project, certificate, article, work experience, skill, link, tool, product, and intro
 rows are stored in the `postgres-data` Docker volume. Uploaded local files are
 stored in the `uploads` Docker volume.
 
@@ -56,7 +56,7 @@ defaults, and runs `go run .`. It uses `POSTGRES_HOST_PORT=5433` and
 ## Sample Data
 
 Seed sample projects, certificates, articles, work experiences, skills, links,
-tools, and intro content into the local PostgreSQL database:
+tools, products, and intro content into the local PostgreSQL database:
 
 ```sh
 ./scripts/seed-sample-data.sh
@@ -64,9 +64,10 @@ tools, and intro content into the local PostgreSQL database:
 
 The seed command replaces only the sample rows by their stable IDs/slugs,
 sample article IDs, sample work experience IDs/slugs, sample skill
-IDs/categories, sample link IDs, sample tool IDs, and the singleton intro row.
-It does not wipe other projects, certificates, articles, work experiences,
-skills, links, or tools.
+IDs/categories, sample link IDs, sample tool IDs, sample product IDs/slugs, the
+products section settings row, and the singleton intro row. It does not wipe
+other projects, certificates, articles, work experiences, skills, links, tools,
+or products.
 
 ## Postman
 
@@ -105,8 +106,10 @@ image upload routes.
 ## Endpoints
 
 Read endpoints are public for projects, certificates, links, work experiences,
-skill categories, skills, tools, and intro. All article routes plus create, update,
-delete, and upload routes require `Authorization: Bearer <jwt>`.
+skill categories, skills, tools, products, the products section settings, and
+intro. Public product list/detail reads return published products only;
+authenticated product reads can manage all statuses. All article routes plus
+create, update, delete, and upload routes require `Authorization: Bearer <jwt>`.
 
 ```txt
 POST   /auth/login
@@ -134,6 +137,14 @@ GET    /tools/{id}
 PATCH  /tools/{id}
 PUT    /tools/{id}
 DELETE /tools/{id}
+GET    /products/section
+PATCH  /products/section
+GET    /products
+POST   /products
+GET    /products/{id-or-slug}
+PATCH  /products/{id-or-slug}
+PUT    /products/{id-or-slug}
+DELETE /products/{id-or-slug}
 GET    /articles
 POST   /articles
 GET    /articles/{id}
