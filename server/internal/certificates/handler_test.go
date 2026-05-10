@@ -41,9 +41,13 @@ func newTestAPI(t *testing.T) testAPI {
 
 	requireJWT := auth.RequireJWT(tokens)
 	mux := http.NewServeMux()
-	mux.Handle("GET /certificates", requireJWT(http.HandlerFunc(certificateHandler.HandleCollection)))
+	mux.Handle("GET /certificates", http.HandlerFunc(certificateHandler.HandleCollection))
 	mux.Handle("POST /certificates", requireJWT(http.HandlerFunc(certificateHandler.HandleCollection)))
-	mux.Handle("/certificates/", requireJWT(http.HandlerFunc(certificateHandler.HandleItem)))
+	mux.Handle("GET /certificates/", http.HandlerFunc(certificateHandler.HandleItem))
+	mux.Handle("POST /certificates/", requireJWT(http.HandlerFunc(certificateHandler.HandleItem)))
+	mux.Handle("PATCH /certificates/", requireJWT(http.HandlerFunc(certificateHandler.HandleItem)))
+	mux.Handle("PUT /certificates/", requireJWT(http.HandlerFunc(certificateHandler.HandleItem)))
+	mux.Handle("DELETE /certificates/", requireJWT(http.HandlerFunc(certificateHandler.HandleItem)))
 
 	return testAPI{
 		handler: mux,
@@ -51,16 +55,17 @@ func newTestAPI(t *testing.T) testAPI {
 	}
 }
 
-func TestCertificatesRequireJWT(t *testing.T) {
+func TestCertificatesPublicReadAndAdminWriteProtection(t *testing.T) {
 	api := newTestAPI(t)
 
-	request := httptest.NewRequest(http.MethodGet, "/certificates", nil)
-	response := httptest.NewRecorder()
+	readResponse := api.publicRequest(t, http.MethodGet, "/certificates", nil, "")
+	if readResponse.Code != http.StatusOK {
+		t.Fatalf("public read status = %d, want %d", readResponse.Code, http.StatusOK)
+	}
 
-	api.handler.ServeHTTP(response, request)
-
-	if response.Code != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want %d", response.Code, http.StatusUnauthorized)
+	writeResponse := api.publicRequest(t, http.MethodPost, "/certificates", strings.NewReader(`{}`), "application/json")
+	if writeResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthorized write status = %d, want %d", writeResponse.Code, http.StatusUnauthorized)
 	}
 }
 
@@ -81,7 +86,7 @@ func TestCertificateCRUD(t *testing.T) {
 		t.Fatal("created_at should be set")
 	}
 
-	getResponse := api.request(t, http.MethodGet, "/certificates/"+certificate.Slug, nil, "")
+	getResponse := api.publicRequest(t, http.MethodGet, "/certificates/"+certificate.Slug, nil, "")
 	if getResponse.Code != http.StatusOK {
 		t.Fatalf("get status = %d, want %d", getResponse.Code, http.StatusOK)
 	}
@@ -193,6 +198,19 @@ func (api testAPI) request(t *testing.T, method string, path string, body io.Rea
 
 	request := httptest.NewRequest(method, path, body)
 	request.Header.Set("Authorization", "Bearer "+api.token)
+	if contentType != "" {
+		request.Header.Set("Content-Type", contentType)
+	}
+
+	response := httptest.NewRecorder()
+	api.handler.ServeHTTP(response, request)
+	return response
+}
+
+func (api testAPI) publicRequest(t *testing.T, method string, path string, body io.Reader, contentType string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	request := httptest.NewRequest(method, path, body)
 	if contentType != "" {
 		request.Header.Set("Content-Type", contentType)
 	}

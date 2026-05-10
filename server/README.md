@@ -86,11 +86,17 @@ Uploads accept only `.png`, `.jpg`, and `.jpeg` files whose detected content typ
 
 ## Endpoints
 
-All `/projects`, `/certificates`, and `/intro` routes require
+Read endpoints are public. Create, update, delete, and upload routes require
 `Authorization: Bearer <jwt>`.
 
 ```txt
 POST   /auth/login
+GET    /links
+POST   /links
+GET    /links/{id}
+PATCH  /links/{id}
+PUT    /links/{id}
+DELETE /links/{id}
 GET    /projects
 POST   /projects
 GET    /projects/{id-or-slug}

@@ -41,9 +41,13 @@ func newTestAPI(t *testing.T) testAPI {
 
 	requireJWT := auth.RequireJWT(tokens)
 	mux := http.NewServeMux()
-	mux.Handle("GET /projects", requireJWT(http.HandlerFunc(projectHandler.HandleCollection)))
+	mux.Handle("GET /projects", http.HandlerFunc(projectHandler.HandleCollection))
 	mux.Handle("POST /projects", requireJWT(http.HandlerFunc(projectHandler.HandleCollection)))
-	mux.Handle("/projects/", requireJWT(http.HandlerFunc(projectHandler.HandleItem)))
+	mux.Handle("GET /projects/", http.HandlerFunc(projectHandler.HandleItem))
+	mux.Handle("POST /projects/", requireJWT(http.HandlerFunc(projectHandler.HandleItem)))
+	mux.Handle("PATCH /projects/", requireJWT(http.HandlerFunc(projectHandler.HandleItem)))
+	mux.Handle("PUT /projects/", requireJWT(http.HandlerFunc(projectHandler.HandleItem)))
+	mux.Handle("DELETE /projects/", requireJWT(http.HandlerFunc(projectHandler.HandleItem)))
 
 	return testAPI{
 		handler: mux,
@@ -51,16 +55,17 @@ func newTestAPI(t *testing.T) testAPI {
 	}
 }
 
-func TestProjectsRequireJWT(t *testing.T) {
+func TestProjectsPublicReadAndAdminWriteProtection(t *testing.T) {
 	api := newTestAPI(t)
 
-	request := httptest.NewRequest(http.MethodGet, "/projects", nil)
-	response := httptest.NewRecorder()
+	readResponse := api.publicRequest(t, http.MethodGet, "/projects", nil, "")
+	if readResponse.Code != http.StatusOK {
+		t.Fatalf("public read status = %d, want %d", readResponse.Code, http.StatusOK)
+	}
 
-	api.handler.ServeHTTP(response, request)
-
-	if response.Code != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want %d", response.Code, http.StatusUnauthorized)
+	writeResponse := api.publicRequest(t, http.MethodPost, "/projects", strings.NewReader(`{}`), "application/json")
+	if writeResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthorized write status = %d, want %d", writeResponse.Code, http.StatusUnauthorized)
 	}
 }
 
@@ -78,7 +83,7 @@ func TestProjectCRUD(t *testing.T) {
 		t.Fatal("created_at should be set")
 	}
 
-	getResponse := api.request(t, http.MethodGet, "/projects/"+project.Slug, nil, "")
+	getResponse := api.publicRequest(t, http.MethodGet, "/projects/"+project.Slug, nil, "")
 	if getResponse.Code != http.StatusOK {
 		t.Fatalf("get status = %d, want %d", getResponse.Code, http.StatusOK)
 	}
@@ -221,6 +226,19 @@ func (api testAPI) request(t *testing.T, method string, path string, body io.Rea
 
 	request := httptest.NewRequest(method, path, body)
 	request.Header.Set("Authorization", "Bearer "+api.token)
+	if contentType != "" {
+		request.Header.Set("Content-Type", contentType)
+	}
+
+	response := httptest.NewRecorder()
+	api.handler.ServeHTTP(response, request)
+	return response
+}
+
+func (api testAPI) publicRequest(t *testing.T, method string, path string, body io.Reader, contentType string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	request := httptest.NewRequest(method, path, body)
 	if contentType != "" {
 		request.Header.Set("Content-Type", contentType)
 	}

@@ -41,8 +41,12 @@ func newTestAPI(t *testing.T) testAPI {
 
 	requireJWT := auth.RequireJWT(tokens)
 	mux := http.NewServeMux()
-	mux.Handle("/intro", requireJWT(http.HandlerFunc(introHandler.Handle)))
-	mux.Handle("/intro/profile-picture", requireJWT(http.HandlerFunc(introHandler.HandleProfilePicture)))
+	mux.Handle("GET /intro", http.HandlerFunc(introHandler.Handle))
+	mux.Handle("PATCH /intro", requireJWT(http.HandlerFunc(introHandler.Handle)))
+	mux.Handle("PUT /intro", requireJWT(http.HandlerFunc(introHandler.Handle)))
+	mux.Handle("DELETE /intro", requireJWT(http.HandlerFunc(introHandler.Handle)))
+	mux.Handle("POST /intro/profile-picture", requireJWT(http.HandlerFunc(introHandler.HandleProfilePicture)))
+	mux.Handle("DELETE /intro/profile-picture", requireJWT(http.HandlerFunc(introHandler.HandleProfilePicture)))
 
 	return testAPI{
 		handler: mux,
@@ -50,16 +54,18 @@ func newTestAPI(t *testing.T) testAPI {
 	}
 }
 
-func TestIntroRequiresJWT(t *testing.T) {
+func TestIntroPublicReadAndAdminWriteProtection(t *testing.T) {
 	api := newTestAPI(t)
+	createIntro(t, api)
 
-	request := httptest.NewRequest(http.MethodGet, "/intro", nil)
-	response := httptest.NewRecorder()
+	readResponse := api.publicRequest(t, http.MethodGet, "/intro", nil, "")
+	if readResponse.Code != http.StatusOK {
+		t.Fatalf("public read status = %d, want %d", readResponse.Code, http.StatusOK)
+	}
 
-	api.handler.ServeHTTP(response, request)
-
-	if response.Code != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want %d", response.Code, http.StatusUnauthorized)
+	writeResponse := api.publicRequest(t, http.MethodPatch, "/intro", strings.NewReader(`{}`), "application/json")
+	if writeResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthorized write status = %d, want %d", writeResponse.Code, http.StatusUnauthorized)
 	}
 }
 
@@ -87,7 +93,7 @@ func TestIntroUpdateGetAndDelete(t *testing.T) {
 		t.Fatal("description should be set")
 	}
 
-	getResponse := api.request(t, http.MethodGet, "/intro", nil, "")
+	getResponse := api.publicRequest(t, http.MethodGet, "/intro", nil, "")
 	if getResponse.Code != http.StatusOK {
 		t.Fatalf("get status = %d, want %d", getResponse.Code, http.StatusOK)
 	}
@@ -97,7 +103,7 @@ func TestIntroUpdateGetAndDelete(t *testing.T) {
 		t.Fatalf("delete status = %d, want %d", deleteResponse.Code, http.StatusNoContent)
 	}
 
-	missingResponse := api.request(t, http.MethodGet, "/intro", nil, "")
+	missingResponse := api.publicRequest(t, http.MethodGet, "/intro", nil, "")
 	if missingResponse.Code != http.StatusNotFound {
 		t.Fatalf("missing status = %d, want %d", missingResponse.Code, http.StatusNotFound)
 	}
@@ -168,6 +174,19 @@ func (api testAPI) request(t *testing.T, method string, path string, body io.Rea
 
 	request := httptest.NewRequest(method, path, body)
 	request.Header.Set("Authorization", "Bearer "+api.token)
+	if contentType != "" {
+		request.Header.Set("Content-Type", contentType)
+	}
+
+	response := httptest.NewRecorder()
+	api.handler.ServeHTTP(response, request)
+	return response
+}
+
+func (api testAPI) publicRequest(t *testing.T, method string, path string, body io.Reader, contentType string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	request := httptest.NewRequest(method, path, body)
 	if contentType != "" {
 		request.Header.Set("Content-Type", contentType)
 	}
