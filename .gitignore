@@ -16,3 +16,6 @@ Thumbs.db
 
 # Local Codex skills
 skills/
+
+# Deployment
+deployment.md
