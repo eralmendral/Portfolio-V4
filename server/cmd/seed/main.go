@@ -13,6 +13,7 @@ import (
 	"github.com/eralme/server/internal/certificates"
 	"github.com/eralme/server/internal/intro"
 	"github.com/eralme/server/internal/links"
+	"github.com/eralme/server/internal/products"
 	"github.com/eralme/server/internal/projects"
 	"github.com/eralme/server/internal/skills"
 	"github.com/eralme/server/internal/tools"
@@ -66,6 +67,10 @@ func main() {
 	toolStore, err := tools.NewPostgresStore(ctx, db)
 	if err != nil {
 		log.Fatalf("migrate tools postgres: %v", err)
+	}
+	productStore, err := products.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate products postgres: %v", err)
 	}
 	introStore, err := intro.NewPostgresStore(ctx, db)
 	if err != nil {
@@ -166,12 +171,33 @@ func main() {
 		}
 	}
 
+	productSamples := sampleProducts()
+	for _, product := range productSamples {
+		if err := deleteProductIfExists(ctx, productStore, product.ID); err != nil {
+			log.Fatalf("delete product sample %q: %v", product.ID, err)
+		}
+		if err := deleteProductIfExists(ctx, productStore, product.Slug); err != nil {
+			log.Fatalf("delete product sample %q: %v", product.Slug, err)
+		}
+		if _, err := productStore.Create(ctx, product); err != nil {
+			log.Fatalf("create product sample %q: %v", product.Slug, err)
+		}
+	}
+	if _, err := productStore.UpdateSection(ctx, func(settings *products.ProductSectionSettings) error {
+		settings.Enabled = true
+		settings.Title = "Esoteric Section"
+		settings.Description = "Study tools, decks, and small digital products worth keeping close."
+		return nil
+	}); err != nil {
+		log.Fatalf("save products section sample: %v", err)
+	}
+
 	introSample := sampleIntro()
 	if _, err := introStore.Save(ctx, introSample); err != nil {
 		log.Fatalf("save intro sample: %v", err)
 	}
 
-	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples))
+	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(productSamples))
 }
 
 func deleteProjectIfExists(ctx context.Context, store projects.Store, idOrSlug string) error {
@@ -233,6 +259,14 @@ func deleteLinkIfExists(ctx context.Context, store links.Store, id string) error
 func deleteToolIfExists(ctx context.Context, store tools.Store, id string) error {
 	err := store.Delete(ctx, id)
 	if errors.Is(err, tools.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteProductIfExists(ctx context.Context, store products.Store, idOrSlug string) error {
+	err := store.Delete(ctx, idOrSlug)
+	if errors.Is(err, products.ErrNotFound) {
 		return nil
 	}
 	return err
@@ -973,6 +1007,37 @@ func sampleTools() []tools.Tool {
 			Featured:  false,
 			Status:    tools.StatusPublished,
 			CreatedAt: createdAt,
+		},
+	}
+}
+
+func sampleProducts() []products.Product {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+	publishedAt := time.Date(2026, time.May, 10, 10, 0, 0, 0, time.UTC)
+
+	return []products.Product{
+		{
+			ID:            "sample-product-valuable-anki-deck-from-stranger",
+			Slug:          "valuable-anki-deck-from-stranger",
+			Title:         "Valuable Anki Deck from Stranger",
+			Summary:       "A focused Anki deck for memorizing high-signal ideas from obscure notes.",
+			Description:   "A compact deck built for daily spaced repetition, with cards organized around durable concepts, recall prompts, and practical review cadence.",
+			CoverImageURL: "https://picsum.photos/seed/valuable-anki-deck/1200/800",
+			PriceLabel:    "$19",
+			CTALabel:      "Get the deck",
+			CTAURL:        "https://example.com/valuable-anki-deck-from-stranger",
+			Category:      "Anki Decks",
+			Tags: []string{
+				"anki",
+				"study",
+				"spaced-repetition",
+				"esoteric",
+			},
+			Featured:    true,
+			SortOrder:   10,
+			Status:      products.StatusPublished,
+			PublishedAt: &publishedAt,
+			CreatedAt:   createdAt,
 		},
 	}
 }
