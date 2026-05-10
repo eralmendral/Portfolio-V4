@@ -1,16 +1,24 @@
 name: server-ci
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - ".github/workflows/server-ci.yml"
   pull_request:
     branches: [main]
     paths:
       - "server/**"
       - ".github/workflows/server-ci.yml"
+  workflow_dispatch:
 
 jobs:
-  tests:
-    name: Tests
+  quality:
+    name: Test, format, and coverage
     runs-on: ubuntu-latest
+    env:
+      COVERAGE_THRESHOLD: "35.0"
 
     defaults:
       run:
@@ -29,5 +37,38 @@ jobs:
       - name: Echo Go version
         run: go version
 
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "The following files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
       - name: Run tests
-        run: go test -covermode=set ./...
+        run: go test -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Check code coverage
+        run: |
+          coverage_report="$(go tool cover -func=coverage.out)"
+          echo "$coverage_report" > coverage.txt
+          echo "$coverage_report"
+
+          coverage="$(echo "$coverage_report" | awk '/^total:/ { gsub(/%/, "", $3); print $3 }')"
+          awk -v coverage="$coverage" -v threshold="$COVERAGE_THRESHOLD" 'BEGIN {
+            if (coverage + 0 < threshold + 0) {
+              printf "Coverage %.1f%% is below required %.1f%%\n", coverage, threshold
+              exit 1
+            }
+            printf "Coverage %.1f%% meets required %.1f%%\n", coverage, threshold
+          }'
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage
+          path: |
+            server/coverage.out
+            server/coverage.txt
+          if-no-files-found: error
