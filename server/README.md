@@ -67,7 +67,7 @@ sample article IDs, sample work experience IDs/slugs, sample skill
 IDs/categories, sample link IDs, sample tool IDs, sample product IDs/slugs, the
 products section settings row, and the singleton intro row. It does not wipe
 other projects, certificates, articles, work experiences, skills, links, tools,
-or products.
+or products. Each seeded collection is capped at three sample records.
 
 ## Postman
 

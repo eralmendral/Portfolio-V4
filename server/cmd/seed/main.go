@@ -21,6 +21,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+const maxSampleRecords = 3
+
 func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
@@ -78,6 +80,7 @@ func main() {
 	}
 
 	projectSamples := sampleProjects()
+	validateSampleLimit("projects", len(projectSamples))
 	for _, project := range projectSamples {
 		if err := deleteProjectIfExists(ctx, projectStore, project.ID); err != nil {
 			log.Fatalf("delete sample %q: %v", project.ID, err)
@@ -91,6 +94,7 @@ func main() {
 	}
 
 	certificateSamples := sampleCertificates()
+	validateSampleLimit("certificates", len(certificateSamples))
 	for _, certificate := range certificateSamples {
 		if err := deleteCertificateIfExists(ctx, certificateStore, certificate.ID); err != nil {
 			log.Fatalf("delete certificate sample %q: %v", certificate.ID, err)
@@ -104,6 +108,7 @@ func main() {
 	}
 
 	articleSamples := sampleArticles()
+	validateSampleLimit("articles", len(articleSamples))
 	for _, article := range articleSamples {
 		if err := deleteArticleIfExists(ctx, articleStore, article.ID); err != nil {
 			log.Fatalf("delete article sample %q: %v", article.ID, err)
@@ -114,6 +119,7 @@ func main() {
 	}
 
 	workExperienceSamples := sampleWorkExperiences()
+	validateSampleLimit("work experiences", len(workExperienceSamples))
 	for _, workExperience := range workExperienceSamples {
 		if err := deleteWorkExperienceIfExists(ctx, workExperienceStore, workExperience.ID); err != nil {
 			log.Fatalf("delete work experience sample %q: %v", workExperience.ID, err)
@@ -127,6 +133,7 @@ func main() {
 	}
 
 	skillSamples := sampleSkills()
+	validateSampleLimit("skills", len(skillSamples))
 	for _, skill := range skillSamples {
 		if err := deleteSkillIfExists(ctx, skillStore, skill.ID); err != nil {
 			log.Fatalf("delete skill sample %q: %v", skill.ID, err)
@@ -134,6 +141,7 @@ func main() {
 	}
 
 	skillCategorySamples := sampleSkillCategories()
+	validateSampleLimit("skill categories", len(skillCategorySamples))
 	for _, category := range skillCategorySamples {
 		if err := deleteSkillCategoryIfExists(ctx, skillStore, category.ID); err != nil {
 			log.Fatalf("delete skill category sample %q: %v", category.ID, err)
@@ -152,6 +160,7 @@ func main() {
 	}
 
 	linkSamples := sampleLinks()
+	validateSampleLimit("links", len(linkSamples))
 	for _, link := range linkSamples {
 		if err := deleteLinkIfExists(ctx, linkStore, link.ID); err != nil {
 			log.Fatalf("delete link sample %q: %v", link.ID, err)
@@ -162,6 +171,7 @@ func main() {
 	}
 
 	toolSamples := sampleTools()
+	validateSampleLimit("tools", len(toolSamples))
 	for _, tool := range toolSamples {
 		if err := deleteToolIfExists(ctx, toolStore, tool.ID); err != nil {
 			log.Fatalf("delete tool sample %q: %v", tool.ID, err)
@@ -172,6 +182,7 @@ func main() {
 	}
 
 	productSamples := sampleProducts()
+	validateSampleLimit("products", len(productSamples))
 	for _, product := range productSamples {
 		if err := deleteProductIfExists(ctx, productStore, product.ID); err != nil {
 			log.Fatalf("delete product sample %q: %v", product.ID, err)
@@ -198,6 +209,12 @@ func main() {
 	}
 
 	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(productSamples))
+}
+
+func validateSampleLimit(name string, count int) {
+	if count > maxSampleRecords {
+		log.Fatalf("sample %s has %d records; max is %d", name, count, maxSampleRecords)
+	}
 }
 
 func deleteProjectIfExists(ctx context.Context, store projects.Store, idOrSlug string) error {
@@ -482,7 +499,6 @@ func sampleWorkExperiences() []workexperience.WorkExperience {
 				"Go",
 				"PostgreSQL",
 				"TypeScript",
-				"Docker",
 			},
 			Skills: []string{
 				"API Design",
@@ -611,66 +627,6 @@ func sampleSkills() []skills.Skill {
 			Status:     skills.StatusPublished,
 			CreatedAt:  createdAt,
 		},
-		{
-			ID:         "sample-skill-react",
-			CategoryID: "sample-skill-category-frontend-engineering",
-			Name:       "React",
-			Summary:    "Builds stateful admin interfaces and reusable UI components.",
-			SortOrder:  10,
-			Featured:   true,
-			Status:     skills.StatusPublished,
-			CreatedAt:  createdAt,
-		},
-		{
-			ID:         "sample-skill-typescript",
-			CategoryID: "sample-skill-category-frontend-engineering",
-			Name:       "TypeScript",
-			Summary:    "Keeps frontend data contracts explicit and safer to refactor.",
-			SortOrder:  20,
-			Featured:   true,
-			Status:     skills.StatusPublished,
-			CreatedAt:  createdAt,
-		},
-		{
-			ID:         "sample-skill-responsive-ui",
-			CategoryID: "sample-skill-category-frontend-engineering",
-			Name:       "Responsive UI",
-			Summary:    "Creates compact, usable layouts across mobile and desktop screens.",
-			SortOrder:  30,
-			Featured:   false,
-			Status:     skills.StatusPublished,
-			CreatedAt:  createdAt,
-		},
-		{
-			ID:         "sample-skill-docker",
-			CategoryID: "sample-skill-category-cloud-devops",
-			Name:       "Docker",
-			Summary:    "Runs app and database services through repeatable local containers.",
-			SortOrder:  10,
-			Featured:   true,
-			Status:     skills.StatusPublished,
-			CreatedAt:  createdAt,
-		},
-		{
-			ID:         "sample-skill-aws-s3",
-			CategoryID: "sample-skill-category-cloud-devops",
-			Name:       "AWS/S3",
-			Summary:    "Uses object storage patterns for uploads, backups, and public assets.",
-			SortOrder:  20,
-			Featured:   false,
-			Status:     skills.StatusPublished,
-			CreatedAt:  createdAt,
-		},
-		{
-			ID:         "sample-skill-ci-validation",
-			CategoryID: "sample-skill-category-cloud-devops",
-			Name:       "CI Validation",
-			Summary:    "Runs build and test checks before shipping portfolio changes.",
-			SortOrder:  30,
-			Featured:   false,
-			Status:     skills.StatusPublished,
-			CreatedAt:  createdAt,
-		},
 	}
 }
 
@@ -705,46 +661,6 @@ func sampleLinks() []links.Link {
 			IconClass: "fa-solid fa-file-lines",
 			SortOrder: 30,
 			Star:      true,
-			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-link-youtube",
-			Label:     "YouTube",
-			URL:       "https://www.youtube.com/@eralmendral",
-			IconClass: "fa-brands fa-youtube",
-			SortOrder: 40,
-			Star:      false,
-			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-link-dribbble",
-			Label:     "Dribbble",
-			URL:       "https://dribbble.com/eralmendral",
-			IconClass: "fa-brands fa-dribbble",
-			SortOrder: 50,
-			Star:      false,
-			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-link-hackerrank",
-			Label:     "HackerRank",
-			URL:       "https://www.hackerrank.com/eralmendral",
-			IconClass: "fa-brands fa-hackerrank",
-			SortOrder: 60,
-			Star:      false,
-			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-link-stack-overflow",
-			Label:     "Stack Overflow",
-			URL:       "https://stackoverflow.com/users/0/eralmendral",
-			IconClass: "fa-brands fa-stack-overflow",
-			SortOrder: 70,
-			Star:      false,
 			Status:    links.StatusPublished,
 			CreatedAt: createdAt,
 		},
@@ -803,211 +719,6 @@ func sampleTools() []tools.Tool {
 			Status:    tools.StatusPublished,
 			CreatedAt: createdAt,
 		},
-		{
-			ID:        "sample-tool-vscode",
-			Name:      "VS Code",
-			Category:  "IDEs & Editors",
-			Summary:   "Primary editor for TypeScript, frontend, and general repository work.",
-			IconClass: "lucide-code-2",
-			Tags: []string{
-				"editor",
-				"typescript",
-				"frontend",
-			},
-			SortOrder: 10,
-			Featured:  true,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-jetbrains",
-			Name:      "JetBrains",
-			Category:  "IDEs & Editors",
-			Summary:   "JetBrains IDE ecosystem for structured backend and frontend development.",
-			IconClass: "lucide-square-code",
-			Tags: []string{
-				"ide",
-				"productivity",
-			},
-			SortOrder: 20,
-			Featured:  true,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-webstorm",
-			Name:      "WebStorm",
-			Category:  "IDEs & Editors",
-			Summary:   "JavaScript and TypeScript IDE for web application development.",
-			IconClass: "lucide-braces",
-			Tags: []string{
-				"ide",
-				"typescript",
-				"frontend",
-			},
-			SortOrder: 30,
-			Featured:  false,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-goland",
-			Name:      "GoLand",
-			Category:  "IDEs & Editors",
-			Summary:   "Go-focused IDE for backend services, tests, and refactoring.",
-			IconClass: "lucide-code",
-			Tags: []string{
-				"ide",
-				"go",
-				"backend",
-			},
-			SortOrder: 40,
-			Featured:  false,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-git",
-			Name:      "Git",
-			Category:  "Engineering Tools",
-			Summary:   "Version control for branching, reviewing, and shipping code changes.",
-			IconClass: "lucide-git-branch",
-			Tags: []string{
-				"version-control",
-				"workflow",
-			},
-			SortOrder: 10,
-			Featured:  false,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-github",
-			Name:      "GitHub",
-			Category:  "Engineering Tools",
-			Summary:   "Repository hosting, pull requests, project collaboration, and CI workflows.",
-			IconClass: "fa-brands fa-github",
-			Tags: []string{
-				"git",
-				"collaboration",
-				"ci",
-			},
-			SortOrder: 20,
-			Featured:  true,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-postman",
-			Name:      "Postman",
-			Category:  "Engineering Tools",
-			Summary:   "API testing, request collections, and endpoint validation.",
-			IconClass: "lucide-send",
-			Tags: []string{
-				"api",
-				"testing",
-			},
-			SortOrder: 30,
-			Featured:  true,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-docker",
-			Name:      "Docker",
-			Category:  "Cloud & DevOps",
-			Summary:   "Containerized local services, reproducible development environments, and deployment workflows.",
-			IconClass: "fa-brands fa-docker",
-			Tags: []string{
-				"containers",
-				"devops",
-				"local-dev",
-			},
-			SortOrder: 10,
-			Featured:  true,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-supabase",
-			Name:      "Supabase",
-			Category:  "Cloud & DevOps",
-			Summary:   "Hosted PostgreSQL, auth, storage, and backend platform workflows.",
-			IconClass: "lucide-database",
-			Tags: []string{
-				"postgresql",
-				"backend",
-				"platform",
-			},
-			SortOrder: 20,
-			Featured:  false,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-vercel",
-			Name:      "Vercel",
-			Category:  "Cloud & DevOps",
-			Summary:   "Frontend hosting, preview deployments, and production release workflows.",
-			IconClass: "lucide-triangle",
-			Tags: []string{
-				"deployment",
-				"frontend",
-				"hosting",
-			},
-			SortOrder: 30,
-			Featured:  false,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-aws-s3",
-			Name:      "AWS/S3",
-			Category:  "Cloud & DevOps",
-			Summary:   "Object storage patterns for uploads, backups, and public assets.",
-			IconClass: "lucide-cloud",
-			Tags: []string{
-				"storage",
-				"cloud",
-				"assets",
-			},
-			SortOrder: 40,
-			Featured:  false,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-github-actions",
-			Name:      "GitHub Actions",
-			Category:  "Cloud & DevOps",
-			Summary:   "CI checks for builds, tests, and release validation.",
-			IconClass: "lucide-play-circle",
-			Tags: []string{
-				"ci",
-				"automation",
-				"github",
-			},
-			SortOrder: 50,
-			Featured:  false,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-blender",
-			Name:      "Blender",
-			Category:  "Design & Creative",
-			Summary:   "3D modeling and creative asset exploration.",
-			IconClass: "lucide-box",
-			Tags: []string{
-				"3d",
-				"creative",
-				"design",
-			},
-			SortOrder: 10,
-			Featured:  false,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
 	}
 }
 
@@ -1031,7 +742,6 @@ func sampleProducts() []products.Product {
 				"anki",
 				"study",
 				"spaced-repetition",
-				"esoteric",
 			},
 			Featured:    true,
 			SortOrder:   10,
