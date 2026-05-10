@@ -113,6 +113,7 @@ create, update, delete, and upload routes require `Authorization: Bearer <jwt>`.
 
 ```txt
 POST   /auth/login
+GET    /healthz
 GET    /links
 POST   /links
 GET    /links/{id}
