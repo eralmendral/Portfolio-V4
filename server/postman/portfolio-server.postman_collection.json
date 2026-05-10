@@ -1880,6 +1880,301 @@
       ]
     },
     {
+      "name": "Products",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Products Section",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/section",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "section"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Products Section",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"title\": \"Products\",\n  \"description\": \"Study tools, decks, and AI engineering resources worth keeping close.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/section",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "section"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{product_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "featured",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "{{product_category}}",
+                  "disabled": true
+                },
+                {
+                  "key": "tag",
+                  "value": "{{product_tag}}",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{product_search}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"product created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"product_id\", body.id);",
+                  "}",
+                  "if (body.slug) {",
+                  "  pm.collectionVariables.set(\"product_slug\", body.slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slug\": \"ai-systems-launch-checklist\",\n  \"title\": \"AI Systems Launch Checklist\",\n  \"summary\": \"A compact checklist for shipping AI-enabled portfolio features.\",\n  \"description\": \"Covers model behavior, API reliability, validation, observability, and release readiness.\",\n  \"cover_image_url\": \"https://example.com/ai-systems-checklist.png\",\n  \"price_label\": \"Free\",\n  \"cta_label\": \"Download checklist\",\n  \"cta_url\": \"https://example.com/ai-systems-checklist\",\n  \"category\": \"AI Engineering\",\n  \"tags\": [\n    \"ai\",\n    \"systems\",\n    \"checklist\"\n  ],\n  \"sort_order\": 10,\n  \"featured\": true,\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by Slug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{product_slug}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Updated from Postman.\",\n  \"featured\": false,\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slug\": \"ai-systems-launch-checklist\",\n  \"title\": \"AI Systems Launch Checklist\",\n  \"summary\": \"Replaced from Postman.\",\n  \"description\": \"A release checklist for reliable AI product work.\",\n  \"cover_image_url\": \"https://example.com/ai-systems-checklist.png\",\n  \"price_label\": \"Free\",\n  \"cta_label\": \"Download checklist\",\n  \"cta_url\": \"https://example.com/ai-systems-checklist\",\n  \"category\": \"AI Engineering\",\n  \"tags\": [\n    \"ai\",\n    \"systems\",\n    \"checklist\"\n  ],\n  \"sort_order\": 10,\n  \"featured\": true,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Intro",
       "auth": {
         "type": "bearer",
@@ -2226,6 +2521,30 @@
     {
       "key": "tool_search",
       "value": "codex"
+    },
+    {
+      "key": "product_id",
+      "value": ""
+    },
+    {
+      "key": "product_slug",
+      "value": "ai-systems-launch-checklist"
+    },
+    {
+      "key": "product_status",
+      "value": "draft"
+    },
+    {
+      "key": "product_category",
+      "value": "AI Engineering"
+    },
+    {
+      "key": "product_tag",
+      "value": "ai"
+    },
+    {
+      "key": "product_search",
+      "value": "checklist"
     }
   ]
 }

@@ -73,7 +73,7 @@ or products. Each seeded collection is capped at three sample records.
 
 Import `postman/portfolio-server.postman_collection.json` into Postman. Run the
 `Auth / Login` request first; it stores the JWT in the collection variables for
-the protected project, certificate, article, skill, link, tool, and intro
+the protected project, certificate, article, skill, link, tool, product, and intro
 requests.
 
 Local development uploads use server disk by default:
