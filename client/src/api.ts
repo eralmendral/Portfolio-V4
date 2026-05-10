@@ -10,6 +10,11 @@ import type {
   LinkListFilter,
   LinkPayload,
   ListFilter,
+  Product,
+  ProductListFilter,
+  ProductPayload,
+  ProductSection,
+  ProductSectionPayload,
   Project,
   ProjectPayload,
   Skill,
@@ -96,6 +101,12 @@ export interface ApiClient {
   createTool(payload: ToolPayload): Promise<Tool>
   updateTool(id: string, payload: ToolPayload): Promise<Tool>
   deleteTool(id: string): Promise<void>
+  listProducts(filter: ProductListFilter): Promise<Product[]>
+  createProduct(payload: ProductPayload): Promise<Product>
+  updateProduct(idOrSlug: string, payload: ProductPayload): Promise<Product>
+  deleteProduct(idOrSlug: string): Promise<void>
+  getProductSection(): Promise<ProductSection>
+  updateProductSection(payload: ProductSectionPayload): Promise<ProductSection>
   getIntro(): Promise<Intro>
   updateIntro(payload: IntroPayload): Promise<Intro>
   deleteIntro(): Promise<void>
@@ -350,6 +361,34 @@ export function createApiClient(getToken: () => string | null): ApiClient {
     deleteTool(id) {
       return request<void>(`/tools/${encodeURIComponent(id)}`, { method: 'DELETE' })
     },
+    async listProducts(filter) {
+      const data = await request<{ products: Product[] }>(`/products${productQueryString(filter)}`)
+      return data.products
+    },
+    createProduct(payload) {
+      return request<Product>('/products', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+    },
+    updateProduct(idOrSlug, payload) {
+      return request<Product>(`/products/${encodeURIComponent(idOrSlug)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      })
+    },
+    deleteProduct(idOrSlug) {
+      return request<void>(`/products/${encodeURIComponent(idOrSlug)}`, { method: 'DELETE' })
+    },
+    getProductSection() {
+      return request<ProductSection>('/products/section')
+    },
+    updateProductSection(payload) {
+      return request<ProductSection>('/products/section', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      })
+    },
     getIntro() {
       return request<Intro>('/intro')
     },
@@ -464,6 +503,28 @@ function toolQueryString(filter: ToolListFilter): string {
   }
   if (filter.status !== 'all') {
     params.set('status', filter.status)
+  }
+  if (filter.featured !== 'all') {
+    params.set('featured', String(filter.featured === 'featured'))
+  }
+  if (filter.category.trim() !== '') {
+    params.set('category', filter.category.trim())
+  }
+  if (filter.tag.trim() !== '') {
+    params.set('tag', filter.tag.trim())
+  }
+  return toQuery(params)
+}
+
+function productQueryString(filter: ProductListFilter): string {
+  const params = new URLSearchParams()
+  if (filter.q.trim() !== '') {
+    params.set('q', filter.q.trim())
+  }
+  if (filter.status !== 'all') {
+    params.set('status', filter.status)
+  } else {
+    params.set('status', 'all')
   }
   if (filter.featured !== 'all') {
     params.set('featured', String(filter.featured === 'featured'))

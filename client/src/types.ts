@@ -15,6 +15,7 @@ export type ResourceTab =
   | 'skill-categories'
   | 'skills'
   | 'tools'
+  | 'products'
   | 'intro'
 
 export interface ListFilter {
@@ -50,6 +51,14 @@ export interface SkillListFilter {
 }
 
 export interface ToolListFilter {
+  q: string
+  status: 'all' | Status
+  featured: FeaturedFilter
+  category: string
+  tag: string
+}
+
+export interface ProductListFilter {
   q: string
   status: 'all' | Status
   featured: FeaturedFilter
@@ -313,6 +322,56 @@ export interface ToolPayload {
   sort_order: number
   featured: boolean
   status: Status
+}
+
+export interface Product {
+  id: string
+  slug: string
+  title: string
+  summary?: string
+  description?: string
+  cover_image_url?: string
+  price_label?: string
+  cta_label?: string
+  cta_url: string
+  category?: string
+  tags?: string[]
+  featured: boolean
+  sort_order: number
+  status: Status
+  published_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ProductPayload {
+  slug: string
+  title: string
+  summary: string
+  description: string
+  cover_image_url: string
+  price_label: string
+  cta_label: string
+  cta_url: string
+  category: string
+  tags: string[]
+  featured: boolean
+  sort_order: number
+  status: Status
+  published_at: string | null
+}
+
+export interface ProductSection {
+  enabled: boolean
+  title: string
+  description: string
+  updated_at: string
+}
+
+export interface ProductSectionPayload {
+  enabled: boolean
+  title: string
+  description: string
 }
 
 export interface Intro {
