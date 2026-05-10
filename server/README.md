@@ -2,6 +2,8 @@
 
 Go API server for the portfolio site.
 
+print('my portfolio')
+
 ## Configuration
 
 The server stores portfolio content in PostgreSQL. `DATABASE_URL` is required; the
