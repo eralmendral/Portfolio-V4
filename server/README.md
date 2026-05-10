@@ -8,7 +8,7 @@ The server stores project data in PostgreSQL. `DATABASE_URL` is required; the
 server does not use `projects.json` or any other JSON file as a data store.
 
 ```sh
-DATABASE_URL=postgres://portfolio:portfolio@localhost:5432/portfolio?sslmode=disable
+DATABASE_URL=postgres://portfolio:portfolio@localhost:5433/portfolio?sslmode=disable
 ```
 
 Required for authenticated project management:
@@ -28,8 +28,38 @@ docker compose up --build
 ```
 
 The API listens on `http://localhost:8080`, and PostgreSQL is exposed on
-`localhost:5432`. Project rows are stored in the `postgres-data` Docker volume.
-Uploaded local files are stored in the `uploads` Docker volume.
+`localhost:5433` by default to avoid conflicts with a local Postgres instance.
+Set `POSTGRES_HOST_PORT=5432` if you want Compose to bind host port `5432`.
+Project rows are stored in the `postgres-data` Docker volume. Uploaded local
+files are stored in the `uploads` Docker volume.
+
+## Local Run Script
+
+Run PostgreSQL with Docker Compose and the API with Go:
+
+```sh
+./scripts/run-server.sh
+```
+
+The script starts the Compose `postgres` service, sets local development
+defaults, and runs `go run .`. It uses `POSTGRES_HOST_PORT=5433` by default.
+
+## Sample Data
+
+Seed two sample projects into the local PostgreSQL database:
+
+```sh
+./scripts/seed-sample-data.sh
+```
+
+The seed command replaces only the two sample rows by their stable IDs/slugs.
+It does not wipe other projects.
+
+## Postman
+
+Import `postman/portfolio-server.postman_collection.json` into Postman. Run the
+`Auth / Login` request first; it stores the JWT in the collection variables for
+the protected project requests.
 
 Local development uploads use server disk by default:
 
