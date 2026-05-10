@@ -9,9 +9,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/eralme/server/internal/articles"
 	"github.com/eralme/server/internal/certificates"
 	"github.com/eralme/server/internal/intro"
+	"github.com/eralme/server/internal/links"
 	"github.com/eralme/server/internal/projects"
+	"github.com/eralme/server/internal/skills"
+	"github.com/eralme/server/internal/tools"
+	"github.com/eralme/server/internal/workexperience"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -41,6 +46,26 @@ func main() {
 	certificateStore, err := certificates.NewPostgresStore(ctx, db)
 	if err != nil {
 		log.Fatalf("migrate certificates postgres: %v", err)
+	}
+	articleStore, err := articles.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate articles postgres: %v", err)
+	}
+	workExperienceStore, err := workexperience.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate work experiences postgres: %v", err)
+	}
+	skillStore, err := skills.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate skills postgres: %v", err)
+	}
+	linkStore, err := links.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate links postgres: %v", err)
+	}
+	toolStore, err := tools.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate tools postgres: %v", err)
 	}
 	introStore, err := intro.NewPostgresStore(ctx, db)
 	if err != nil {
@@ -73,12 +98,80 @@ func main() {
 		}
 	}
 
+	articleSamples := sampleArticles()
+	for _, article := range articleSamples {
+		if err := deleteArticleIfExists(ctx, articleStore, article.ID); err != nil {
+			log.Fatalf("delete article sample %q: %v", article.ID, err)
+		}
+		if _, err := articleStore.Create(ctx, article); err != nil {
+			log.Fatalf("create article sample %q: %v", article.ID, err)
+		}
+	}
+
+	workExperienceSamples := sampleWorkExperiences()
+	for _, workExperience := range workExperienceSamples {
+		if err := deleteWorkExperienceIfExists(ctx, workExperienceStore, workExperience.ID); err != nil {
+			log.Fatalf("delete work experience sample %q: %v", workExperience.ID, err)
+		}
+		if err := deleteWorkExperienceIfExists(ctx, workExperienceStore, workExperience.Slug); err != nil {
+			log.Fatalf("delete work experience sample %q: %v", workExperience.Slug, err)
+		}
+		if _, err := workExperienceStore.Create(ctx, workExperience); err != nil {
+			log.Fatalf("create work experience sample %q: %v", workExperience.Slug, err)
+		}
+	}
+
+	skillSamples := sampleSkills()
+	for _, skill := range skillSamples {
+		if err := deleteSkillIfExists(ctx, skillStore, skill.ID); err != nil {
+			log.Fatalf("delete skill sample %q: %v", skill.ID, err)
+		}
+	}
+
+	skillCategorySamples := sampleSkillCategories()
+	for _, category := range skillCategorySamples {
+		if err := deleteSkillCategoryIfExists(ctx, skillStore, category.ID); err != nil {
+			log.Fatalf("delete skill category sample %q: %v", category.ID, err)
+		}
+		if err := deleteSkillCategoryIfExists(ctx, skillStore, category.Slug); err != nil {
+			log.Fatalf("delete skill category sample %q: %v", category.Slug, err)
+		}
+		if _, err := skillStore.CreateCategory(ctx, category); err != nil {
+			log.Fatalf("create skill category sample %q: %v", category.Slug, err)
+		}
+	}
+	for _, skill := range skillSamples {
+		if _, err := skillStore.CreateSkill(ctx, skill); err != nil {
+			log.Fatalf("create skill sample %q: %v", skill.ID, err)
+		}
+	}
+
+	linkSamples := sampleLinks()
+	for _, link := range linkSamples {
+		if err := deleteLinkIfExists(ctx, linkStore, link.ID); err != nil {
+			log.Fatalf("delete link sample %q: %v", link.ID, err)
+		}
+		if _, err := linkStore.Create(ctx, link); err != nil {
+			log.Fatalf("create link sample %q: %v", link.ID, err)
+		}
+	}
+
+	toolSamples := sampleTools()
+	for _, tool := range toolSamples {
+		if err := deleteToolIfExists(ctx, toolStore, tool.ID); err != nil {
+			log.Fatalf("delete tool sample %q: %v", tool.ID, err)
+		}
+		if _, err := toolStore.Create(ctx, tool); err != nil {
+			log.Fatalf("create tool sample %q: %v", tool.ID, err)
+		}
+	}
+
 	introSample := sampleIntro()
 	if _, err := introStore.Save(ctx, introSample); err != nil {
 		log.Fatalf("save intro sample: %v", err)
 	}
 
-	fmt.Printf("seeded %d sample projects, %d sample certificates, and intro\n", len(projectSamples), len(certificateSamples))
+	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples))
 }
 
 func deleteProjectIfExists(ctx context.Context, store projects.Store, idOrSlug string) error {
@@ -92,6 +185,54 @@ func deleteProjectIfExists(ctx context.Context, store projects.Store, idOrSlug s
 func deleteCertificateIfExists(ctx context.Context, store certificates.Store, idOrSlug string) error {
 	err := store.Delete(ctx, idOrSlug)
 	if errors.Is(err, certificates.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteArticleIfExists(ctx context.Context, store articles.Store, id string) error {
+	err := store.Delete(ctx, id)
+	if errors.Is(err, articles.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteWorkExperienceIfExists(ctx context.Context, store workexperience.Store, idOrSlug string) error {
+	err := store.Delete(ctx, idOrSlug)
+	if errors.Is(err, workexperience.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteSkillCategoryIfExists(ctx context.Context, store skills.Store, idOrSlug string) error {
+	err := store.DeleteCategory(ctx, idOrSlug)
+	if errors.Is(err, skills.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteSkillIfExists(ctx context.Context, store skills.Store, id string) error {
+	err := store.DeleteSkill(ctx, id)
+	if errors.Is(err, skills.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteLinkIfExists(ctx context.Context, store links.Store, id string) error {
+	err := store.Delete(ctx, id)
+	if errors.Is(err, links.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteToolIfExists(ctx context.Context, store tools.Store, id string) error {
+	err := store.Delete(ctx, id)
+	if errors.Is(err, tools.ErrNotFound) {
 		return nil
 	}
 	return err
@@ -241,18 +382,613 @@ func sampleCertificates() []certificates.Certificate {
 	}
 }
 
+func sampleArticles() []articles.Article {
+	firstPublishedAt := time.Date(2026, time.April, 12, 9, 0, 0, 0, time.UTC)
+	secondPublishedAt := time.Date(2026, time.May, 4, 9, 0, 0, 0, time.UTC)
+
+	return []articles.Article{
+		{
+			ID:            "sample-devto-go-api-routing",
+			Title:         "Routing Patterns for Go Portfolio APIs",
+			URL:           "https://dev.to/example/routing-patterns-for-go-portfolio-apis",
+			Source:        "Dev.to",
+			Summary:       "A practical walkthrough of organizing authenticated CRUD routes in a Go portfolio backend.",
+			CoverImageURL: "https://picsum.photos/seed/devto-go-api-routing/1200/630",
+			Featured:      true,
+			SortOrder:     10,
+			Status:        articles.StatusPublished,
+			PublishedAt:   &firstPublishedAt,
+			CreatedAt:     firstPublishedAt,
+		},
+		{
+			ID:            "sample-medium-portfolio-content-models",
+			Title:         "Content Models for Portfolio Preview Cards",
+			URL:           "https://medium.com/example/content-models-for-portfolio-preview-cards",
+			Source:        "Medium",
+			Summary:       "How lightweight metadata can power reusable project, certificate, and article previews.",
+			CoverImageURL: "https://picsum.photos/seed/medium-portfolio-content-models/1200/630",
+			Featured:      false,
+			SortOrder:     20,
+			Status:        articles.StatusPublished,
+			PublishedAt:   &secondPublishedAt,
+			CreatedAt:     secondPublishedAt,
+		},
+	}
+}
+
+func sampleWorkExperiences() []workexperience.WorkExperience {
+	firstStartedAt := time.Date(2024, time.January, 1, 9, 0, 0, 0, time.UTC)
+	secondStartedAt := time.Date(2022, time.March, 1, 9, 0, 0, 0, time.UTC)
+	secondEndedAt := time.Date(2023, time.December, 31, 17, 0, 0, 0, time.UTC)
+	publishedAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []workexperience.WorkExperience{
+		{
+			ID:             "sample-arete-labs-senior-software-engineer",
+			Slug:           "arete-labs-senior-software-engineer",
+			Title:          "Senior Software Engineer",
+			Company:        "Arete Labs",
+			CompanyURL:     "https://example.com",
+			CompanyLogoURL: "https://picsum.photos/seed/arete-labs-logo/512/512",
+			EmploymentType: "Full-time",
+			Location:       "Manila, Philippines",
+			LocationType:   "Remote",
+			Summary:        "Builds portfolio APIs, admin workflows, and content-management tools with practical deployment paths.",
+			Description:    "Owns backend modeling, authenticated CRUD APIs, upload flows, and frontend integration details for portfolio operations.",
+			Highlights: []string{
+				"Shipped PostgreSQL-backed portfolio content APIs.",
+				"Improved admin publishing workflows with focused validation and tests.",
+			},
+			Responsibilities: []string{
+				"Design and implement Go HTTP APIs.",
+				"Model portfolio content data and persistence behavior.",
+				"Review frontend data contracts and operational workflows.",
+			},
+			TechStack: []string{
+				"Go",
+				"PostgreSQL",
+				"TypeScript",
+				"Docker",
+			},
+			Skills: []string{
+				"API Design",
+				"Data Modeling",
+				"Testing",
+			},
+			StartedAt:   firstStartedAt,
+			Current:     true,
+			Featured:    true,
+			SortOrder:   10,
+			Status:      workexperience.StatusPublished,
+			PublishedAt: &publishedAt,
+			CreatedAt:   firstStartedAt,
+		},
+		{
+			ID:             "sample-northstar-systems-backend-engineer",
+			Slug:           "northstar-systems-backend-engineer",
+			Title:          "Backend Engineer",
+			Company:        "Northstar Systems",
+			CompanyURL:     "https://example.com",
+			CompanyLogoURL: "https://picsum.photos/seed/northstar-logo/512/512",
+			EmploymentType: "Contract",
+			Location:       "Remote",
+			LocationType:   "Remote",
+			Summary:        "Delivered backend services and database-backed features for small product teams.",
+			Description:    "Implemented HTTP APIs, relational schemas, and maintenance workflows for operational tools.",
+			Highlights: []string{
+				"Reduced manual data cleanup through clearer API validation.",
+				"Added regression coverage for critical content workflows.",
+			},
+			Responsibilities: []string{
+				"Build backend service endpoints.",
+				"Maintain PostgreSQL data models.",
+				"Collaborate on release validation.",
+			},
+			TechStack: []string{
+				"Go",
+				"PostgreSQL",
+				"React",
+			},
+			Skills: []string{
+				"Backend Engineering",
+				"Reliability",
+				"Code Review",
+			},
+			StartedAt:   secondStartedAt,
+			EndedAt:     &secondEndedAt,
+			Current:     false,
+			Featured:    false,
+			SortOrder:   20,
+			Status:      workexperience.StatusPublished,
+			PublishedAt: &publishedAt,
+			CreatedAt:   secondStartedAt,
+		},
+	}
+}
+
+func sampleSkillCategories() []skills.SkillCategory {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []skills.SkillCategory{
+		{
+			ID:          "sample-skill-category-backend-engineering",
+			Slug:        "backend-engineering",
+			Name:        "Backend Engineering",
+			Description: "API design, Go services, authentication, and relational data modeling.",
+			IconClass:   "lucide-server",
+			SortOrder:   10,
+			Status:      skills.StatusPublished,
+			CreatedAt:   createdAt,
+		},
+		{
+			ID:          "sample-skill-category-frontend-engineering",
+			Slug:        "frontend-engineering",
+			Name:        "Frontend Engineering",
+			Description: "React, TypeScript, accessible forms, and responsive admin interfaces.",
+			IconClass:   "lucide-monitor",
+			SortOrder:   20,
+			Status:      skills.StatusPublished,
+			CreatedAt:   createdAt,
+		},
+		{
+			ID:          "sample-skill-category-cloud-devops",
+			Slug:        "cloud-devops",
+			Name:        "Cloud & DevOps",
+			Description: "Containerized local workflows, cloud storage, deployment, and CI checks.",
+			IconClass:   "lucide-cloud",
+			SortOrder:   30,
+			Status:      skills.StatusPublished,
+			CreatedAt:   createdAt,
+		},
+	}
+}
+
+func sampleSkills() []skills.Skill {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []skills.Skill{
+		{
+			ID:         "sample-skill-api-design",
+			CategoryID: "sample-skill-category-backend-engineering",
+			Name:       "API Design",
+			Summary:    "Designs clear HTTP resources, validation paths, and response contracts.",
+			SortOrder:  10,
+			Featured:   true,
+			Status:     skills.StatusPublished,
+			CreatedAt:  createdAt,
+		},
+		{
+			ID:         "sample-skill-go",
+			CategoryID: "sample-skill-category-backend-engineering",
+			Name:       "Go",
+			Summary:    "Builds practical Go services with standard-library HTTP routing and tests.",
+			SortOrder:  20,
+			Featured:   true,
+			Status:     skills.StatusPublished,
+			CreatedAt:  createdAt,
+		},
+		{
+			ID:         "sample-skill-postgresql",
+			CategoryID: "sample-skill-category-backend-engineering",
+			Name:       "PostgreSQL",
+			Summary:    "Models relational content, migrations, indexing, and query filtering.",
+			SortOrder:  30,
+			Featured:   true,
+			Status:     skills.StatusPublished,
+			CreatedAt:  createdAt,
+		},
+		{
+			ID:         "sample-skill-react",
+			CategoryID: "sample-skill-category-frontend-engineering",
+			Name:       "React",
+			Summary:    "Builds stateful admin interfaces and reusable UI components.",
+			SortOrder:  10,
+			Featured:   true,
+			Status:     skills.StatusPublished,
+			CreatedAt:  createdAt,
+		},
+		{
+			ID:         "sample-skill-typescript",
+			CategoryID: "sample-skill-category-frontend-engineering",
+			Name:       "TypeScript",
+			Summary:    "Keeps frontend data contracts explicit and safer to refactor.",
+			SortOrder:  20,
+			Featured:   true,
+			Status:     skills.StatusPublished,
+			CreatedAt:  createdAt,
+		},
+		{
+			ID:         "sample-skill-responsive-ui",
+			CategoryID: "sample-skill-category-frontend-engineering",
+			Name:       "Responsive UI",
+			Summary:    "Creates compact, usable layouts across mobile and desktop screens.",
+			SortOrder:  30,
+			Featured:   false,
+			Status:     skills.StatusPublished,
+			CreatedAt:  createdAt,
+		},
+		{
+			ID:         "sample-skill-docker",
+			CategoryID: "sample-skill-category-cloud-devops",
+			Name:       "Docker",
+			Summary:    "Runs app and database services through repeatable local containers.",
+			SortOrder:  10,
+			Featured:   true,
+			Status:     skills.StatusPublished,
+			CreatedAt:  createdAt,
+		},
+		{
+			ID:         "sample-skill-aws-s3",
+			CategoryID: "sample-skill-category-cloud-devops",
+			Name:       "AWS/S3",
+			Summary:    "Uses object storage patterns for uploads, backups, and public assets.",
+			SortOrder:  20,
+			Featured:   false,
+			Status:     skills.StatusPublished,
+			CreatedAt:  createdAt,
+		},
+		{
+			ID:         "sample-skill-ci-validation",
+			CategoryID: "sample-skill-category-cloud-devops",
+			Name:       "CI Validation",
+			Summary:    "Runs build and test checks before shipping portfolio changes.",
+			SortOrder:  30,
+			Featured:   false,
+			Status:     skills.StatusPublished,
+			CreatedAt:  createdAt,
+		},
+	}
+}
+
+func sampleLinks() []links.Link {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []links.Link{
+		{
+			ID:        "sample-link-github",
+			Label:     "GitHub",
+			URL:       "https://github.com/eralmendral",
+			IconClass: "fa-brands fa-github",
+			SortOrder: 10,
+			Star:      true,
+			Status:    links.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-link-linkedin",
+			Label:     "LinkedIn",
+			URL:       "https://www.linkedin.com/in/eralmendral",
+			IconClass: "fa-brands fa-linkedin",
+			SortOrder: 20,
+			Star:      true,
+			Status:    links.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-link-resume",
+			Label:     "Resume",
+			URL:       "https://example.com/resume.pdf",
+			IconClass: "fa-solid fa-file-lines",
+			SortOrder: 30,
+			Star:      true,
+			Status:    links.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-link-youtube",
+			Label:     "YouTube",
+			URL:       "https://www.youtube.com/@eralmendral",
+			IconClass: "fa-brands fa-youtube",
+			SortOrder: 40,
+			Star:      false,
+			Status:    links.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-link-dribbble",
+			Label:     "Dribbble",
+			URL:       "https://dribbble.com/eralmendral",
+			IconClass: "fa-brands fa-dribbble",
+			SortOrder: 50,
+			Star:      false,
+			Status:    links.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-link-hackerrank",
+			Label:     "HackerRank",
+			URL:       "https://www.hackerrank.com/eralmendral",
+			IconClass: "fa-brands fa-hackerrank",
+			SortOrder: 60,
+			Star:      false,
+			Status:    links.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-link-stack-overflow",
+			Label:     "Stack Overflow",
+			URL:       "https://stackoverflow.com/users/0/eralmendral",
+			IconClass: "fa-brands fa-stack-overflow",
+			SortOrder: 70,
+			Star:      false,
+			Status:    links.StatusPublished,
+			CreatedAt: createdAt,
+		},
+	}
+}
+
+func sampleTools() []tools.Tool {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []tools.Tool{
+		{
+			ID:        "sample-tool-codex",
+			Name:      "Codex",
+			Category:  "AI & Coding Assistants",
+			Summary:   "Agentic coding workflow for implementing, testing, and reviewing repository changes.",
+			IconClass: "lucide-bot",
+			Tags: []string{
+				"ai",
+				"coding",
+				"agent",
+			},
+			SortOrder: 10,
+			Featured:  true,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-claude",
+			Name:      "Claude",
+			Category:  "AI & Coding Assistants",
+			Summary:   "AI assistant for reasoning, drafting, coding support, and technical exploration.",
+			IconClass: "lucide-sparkles",
+			Tags: []string{
+				"ai",
+				"assistant",
+				"reasoning",
+			},
+			SortOrder: 20,
+			Featured:  true,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-opencode",
+			Name:      "OpenCode",
+			Category:  "AI & Coding Assistants",
+			Summary:   "Terminal-based AI coding workflow for codebase edits and review loops.",
+			IconClass: "lucide-terminal",
+			Tags: []string{
+				"ai",
+				"terminal",
+				"coding",
+			},
+			SortOrder: 30,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-vscode",
+			Name:      "VS Code",
+			Category:  "IDEs & Editors",
+			Summary:   "Primary editor for TypeScript, frontend, and general repository work.",
+			IconClass: "lucide-code-2",
+			Tags: []string{
+				"editor",
+				"typescript",
+				"frontend",
+			},
+			SortOrder: 10,
+			Featured:  true,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-jetbrains",
+			Name:      "JetBrains",
+			Category:  "IDEs & Editors",
+			Summary:   "JetBrains IDE ecosystem for structured backend and frontend development.",
+			IconClass: "lucide-square-code",
+			Tags: []string{
+				"ide",
+				"productivity",
+			},
+			SortOrder: 20,
+			Featured:  true,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-webstorm",
+			Name:      "WebStorm",
+			Category:  "IDEs & Editors",
+			Summary:   "JavaScript and TypeScript IDE for web application development.",
+			IconClass: "lucide-braces",
+			Tags: []string{
+				"ide",
+				"typescript",
+				"frontend",
+			},
+			SortOrder: 30,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-goland",
+			Name:      "GoLand",
+			Category:  "IDEs & Editors",
+			Summary:   "Go-focused IDE for backend services, tests, and refactoring.",
+			IconClass: "lucide-code",
+			Tags: []string{
+				"ide",
+				"go",
+				"backend",
+			},
+			SortOrder: 40,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-git",
+			Name:      "Git",
+			Category:  "Engineering Tools",
+			Summary:   "Version control for branching, reviewing, and shipping code changes.",
+			IconClass: "lucide-git-branch",
+			Tags: []string{
+				"version-control",
+				"workflow",
+			},
+			SortOrder: 10,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-github",
+			Name:      "GitHub",
+			Category:  "Engineering Tools",
+			Summary:   "Repository hosting, pull requests, project collaboration, and CI workflows.",
+			IconClass: "fa-brands fa-github",
+			Tags: []string{
+				"git",
+				"collaboration",
+				"ci",
+			},
+			SortOrder: 20,
+			Featured:  true,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-postman",
+			Name:      "Postman",
+			Category:  "Engineering Tools",
+			Summary:   "API testing, request collections, and endpoint validation.",
+			IconClass: "lucide-send",
+			Tags: []string{
+				"api",
+				"testing",
+			},
+			SortOrder: 30,
+			Featured:  true,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-docker",
+			Name:      "Docker",
+			Category:  "Cloud & DevOps",
+			Summary:   "Containerized local services, reproducible development environments, and deployment workflows.",
+			IconClass: "fa-brands fa-docker",
+			Tags: []string{
+				"containers",
+				"devops",
+				"local-dev",
+			},
+			SortOrder: 10,
+			Featured:  true,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-supabase",
+			Name:      "Supabase",
+			Category:  "Cloud & DevOps",
+			Summary:   "Hosted PostgreSQL, auth, storage, and backend platform workflows.",
+			IconClass: "lucide-database",
+			Tags: []string{
+				"postgresql",
+				"backend",
+				"platform",
+			},
+			SortOrder: 20,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-vercel",
+			Name:      "Vercel",
+			Category:  "Cloud & DevOps",
+			Summary:   "Frontend hosting, preview deployments, and production release workflows.",
+			IconClass: "lucide-triangle",
+			Tags: []string{
+				"deployment",
+				"frontend",
+				"hosting",
+			},
+			SortOrder: 30,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-aws-s3",
+			Name:      "AWS/S3",
+			Category:  "Cloud & DevOps",
+			Summary:   "Object storage patterns for uploads, backups, and public assets.",
+			IconClass: "lucide-cloud",
+			Tags: []string{
+				"storage",
+				"cloud",
+				"assets",
+			},
+			SortOrder: 40,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-github-actions",
+			Name:      "GitHub Actions",
+			Category:  "Cloud & DevOps",
+			Summary:   "CI checks for builds, tests, and release validation.",
+			IconClass: "lucide-play-circle",
+			Tags: []string{
+				"ci",
+				"automation",
+				"github",
+			},
+			SortOrder: 50,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-blender",
+			Name:      "Blender",
+			Category:  "Design & Creative",
+			Summary:   "3D modeling and creative asset exploration.",
+			IconClass: "lucide-box",
+			Tags: []string{
+				"3d",
+				"creative",
+				"design",
+			},
+			SortOrder: 10,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+	}
+}
+
 func sampleIntro() intro.Intro {
 	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
 
 	return intro.Intro{
 		ID:          intro.DefaultID,
-		Title:       "Software Engineer",
-		Description: "I build backend systems, polished web experiences, and portfolio tools that are practical to operate.",
+		Title:       "AI Engineer",
+		Description: "I build AI-enabled products, backend systems, and polished interfaces that turn model capabilities into reliable user workflows.",
 		ProfilePicture: &intro.IntroImage{
 			ID:         "sample-intro-profile-picture",
-			URL:        "https://picsum.photos/seed/profile-picture/1200/1200",
-			AltText:    "Profile portrait",
-			Caption:    "Portfolio profile picture",
+			URL:        "https://picsum.photos/seed/ai-engineer-profile/1200/1200",
+			AltText:    "AI Engineer profile portrait",
+			Caption:    "AI Engineer profile picture",
 			UploadedAt: createdAt,
 		},
 		CreatedAt: createdAt,

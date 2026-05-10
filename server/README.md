@@ -4,19 +4,26 @@ Go API server for the portfolio site.
 
 ## Configuration
 
-The server stores project data in PostgreSQL. `DATABASE_URL` is required; the
+The server stores portfolio content in PostgreSQL. `DATABASE_URL` is required; the
 server does not use `projects.json` or any other JSON file as a data store.
 
 ```sh
 DATABASE_URL=postgres://portfolio:portfolio@localhost:5433/portfolio?sslmode=disable
 ```
 
-Required for authenticated project management:
+Required for authenticated content management:
 
 ```sh
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-me
 JWT_SECRET=replace-with-a-long-random-secret
+```
+
+For the local Lynx web admin client, allow browser requests from the Rspeedy
+dev server:
+
+```sh
+CLIENT_ORIGIN=http://localhost:3000
 ```
 
 ## Docker
@@ -30,8 +37,9 @@ docker compose up --build
 The API listens on `http://localhost:8080`, and PostgreSQL is exposed on
 `localhost:5433` by default to avoid conflicts with a local Postgres instance.
 Set `POSTGRES_HOST_PORT=5432` if you want Compose to bind host port `5432`.
-Project, certificate, and intro rows are stored in the `postgres-data` Docker
-volume. Uploaded local files are stored in the `uploads` Docker volume.
+Project, certificate, article, work experience, skill, link, tool, and intro
+rows are stored in the `postgres-data` Docker volume. Uploaded local files are
+stored in the `uploads` Docker volume.
 
 ## Local Run Script
 
@@ -42,25 +50,30 @@ Run PostgreSQL with Docker Compose and the API with Go:
 ```
 
 The script starts the Compose `postgres` service, sets local development
-defaults, and runs `go run .`. It uses `POSTGRES_HOST_PORT=5433` by default.
+defaults, and runs `go run .`. It uses `POSTGRES_HOST_PORT=5433` and
+`CLIENT_ORIGIN=http://localhost:3000` by default.
 
 ## Sample Data
 
-Seed sample projects, certificates, and intro content into the local PostgreSQL
-database:
+Seed sample projects, certificates, articles, work experiences, skills, links,
+tools, and intro content into the local PostgreSQL database:
 
 ```sh
 ./scripts/seed-sample-data.sh
 ```
 
-The seed command replaces only the sample rows by their stable IDs/slugs and
-the singleton intro row. It does not wipe other projects or certificates.
+The seed command replaces only the sample rows by their stable IDs/slugs,
+sample article IDs, sample work experience IDs/slugs, sample skill
+IDs/categories, sample link IDs, sample tool IDs, and the singleton intro row.
+It does not wipe other projects, certificates, articles, work experiences,
+skills, links, or tools.
 
 ## Postman
 
 Import `postman/portfolio-server.postman_collection.json` into Postman. Run the
 `Auth / Login` request first; it stores the JWT in the collection variables for
-the protected project, certificate, and intro requests.
+the protected project, certificate, article, skill, link, tool, and intro
+requests.
 
 Local development uploads use server disk by default:
 
@@ -82,12 +95,18 @@ DO_SPACES_PUBLIC_BASE_URL=https://your-space-name.nyc3.cdn.digitaloceanspaces.co
 DO_SPACES_ACL=public-read
 ```
 
-Uploads accept only `.png`, `.jpg`, and `.jpeg` files whose detected content type matches the extension. The default file size limit is 300 MiB and can be overridden with `MAX_UPLOAD_BYTES`.
+Uploads accept only `.png`, `.jpg`, and `.jpeg` files whose detected content
+type matches the extension. The default file size limit is 300 MiB and can be
+overridden with `MAX_UPLOAD_BYTES`.
+
+Article cover images are stored as external URLs only; there are no article
+image upload routes.
 
 ## Endpoints
 
-Read endpoints are public. Create, update, delete, and upload routes require
-`Authorization: Bearer <jwt>`.
+Read endpoints are public for projects, certificates, links, work experiences,
+skill categories, skills, tools, and intro. All article routes plus create, update,
+delete, and upload routes require `Authorization: Bearer <jwt>`.
 
 ```txt
 POST   /auth/login
@@ -97,6 +116,36 @@ GET    /links/{id}
 PATCH  /links/{id}
 PUT    /links/{id}
 DELETE /links/{id}
+GET    /skill-categories
+POST   /skill-categories
+GET    /skill-categories/{id-or-slug}
+PATCH  /skill-categories/{id-or-slug}
+PUT    /skill-categories/{id-or-slug}
+DELETE /skill-categories/{id-or-slug}
+GET    /skills
+POST   /skills
+GET    /skills/{id}
+PATCH  /skills/{id}
+PUT    /skills/{id}
+DELETE /skills/{id}
+GET    /tools
+POST   /tools
+GET    /tools/{id}
+PATCH  /tools/{id}
+PUT    /tools/{id}
+DELETE /tools/{id}
+GET    /articles
+POST   /articles
+GET    /articles/{id}
+PATCH  /articles/{id}
+PUT    /articles/{id}
+DELETE /articles/{id}
+GET    /work-experiences
+POST   /work-experiences
+GET    /work-experiences/{id-or-slug}
+PATCH  /work-experiences/{id-or-slug}
+PUT    /work-experiences/{id-or-slug}
+DELETE /work-experiences/{id-or-slug}
 GET    /projects
 POST   /projects
 GET    /projects/{id-or-slug}

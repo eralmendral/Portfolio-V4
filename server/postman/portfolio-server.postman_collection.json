@@ -85,6 +85,211 @@
       ]
     },
     {
+      "name": "Links",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Links",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/links",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "links"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{link_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "star",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{link_search}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Link",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"link created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"link_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"GitHub\",\n  \"url\": \"https://github.com/eralmendral\",\n  \"icon_class\": \"fa-brands fa-github\",\n  \"sort_order\": 10,\n  \"star\": true,\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/links",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "links"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Link by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/links/{{link_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "links",
+                "{{link_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Link",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"icon_class\": \"fa-brands fa-square-github\",\n  \"sort_order\": 20,\n  \"star\": false,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/links/{{link_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "links",
+                "{{link_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Link",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"GitHub\",\n  \"url\": \"https://github.com/eralmendral\",\n  \"icon_class\": \"fa-brands fa-github\",\n  \"sort_order\": 10,\n  \"star\": true,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/links/{{link_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "links",
+                "{{link_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Link",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/links/{{link_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "links",
+                "{{link_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Projects",
       "auth": {
         "type": "bearer",
@@ -250,6 +455,37 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"summary\": \"Updated from Postman.\",\n  \"featured\": false,\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Project",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sample Portfolio Project\",\n  \"summary\": \"Replaced from Postman.\",\n  \"description\": \"Use this request to replace editable project fields through the API.\",\n  \"body\": \"Long-form project details can go here.\",\n  \"tech_stack\": [\n    \"Go\",\n    \"PostgreSQL\"\n  ],\n  \"tags\": [\n    \"api\",\n    \"portfolio\"\n  ],\n  \"github_url\": \"https://github.com/example/project\",\n  \"demo_url\": \"https://example.com/project\",\n  \"featured\": true,\n  \"sort_order\": 10,\n  \"status\": \"published\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/projects/{{project_id}}",
@@ -631,6 +867,37 @@
           "response": []
         },
         {
+          "name": "Replace Certificate",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sample Certificate\",\n  \"issuer\": \"Portfolio Labs\",\n  \"summary\": \"Replaced from Postman.\",\n  \"description\": \"Use this request to replace editable certificate fields through the API.\",\n  \"credential_url\": \"https://example.com/certificates/sample\",\n  \"featured\": true,\n  \"sort_order\": 10,\n  \"status\": \"published\",\n  \"issued_at\": \"2026-05-01T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/certificates/{{certificate_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates",
+                "{{certificate_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Delete Certificate",
           "request": {
             "method": "DELETE",
@@ -643,6 +910,211 @@
               "path": [
                 "certificates",
                 "{{certificate_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Articles",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Articles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/articles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "articles"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{article_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "featured",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{article_search}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Article",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"article created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"article_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sample Portfolio Article\",\n  \"url\": \"https://dev.to/example/sample-portfolio-article\",\n  \"source\": \"Dev.to\",\n  \"summary\": \"An external article preview created from Postman.\",\n  \"cover_image_url\": \"https://example.com/images/sample-article.jpg\",\n  \"featured\": true,\n  \"sort_order\": 10,\n  \"status\": \"draft\",\n  \"published_at\": \"2026-05-01T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/articles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "articles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Article by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/articles/{{article_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "articles",
+                "{{article_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Article",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Updated from Postman.\",\n  \"featured\": false,\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/articles/{{article_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "articles",
+                "{{article_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Article",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sample Portfolio Article\",\n  \"url\": \"https://dev.to/example/sample-portfolio-article\",\n  \"source\": \"Dev.to\",\n  \"summary\": \"Replaced from Postman.\",\n  \"cover_image_url\": \"https://example.com/images/sample-article.jpg\",\n  \"featured\": true,\n  \"sort_order\": 10,\n  \"status\": \"published\",\n  \"published_at\": \"2026-05-01T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/articles/{{article_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "articles",
+                "{{article_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Article",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/articles/{{article_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "articles",
+                "{{article_id}}"
               ]
             }
           },
@@ -752,6 +1224,662 @@
       ]
     },
     {
+      "name": "Skill Categories",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Skill Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/skill-categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skill-categories"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{skill_category_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{skill_category_search}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Skill Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"skill category created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"skill_category_id\", body.id);",
+                  "}",
+                  "if (body.slug) {",
+                  "  pm.collectionVariables.set(\"skill_category_slug\", body.slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slug\": \"{{skill_category_slug}}\",\n  \"name\": \"Backend Engineering\",\n  \"description\": \"API design, Go services, and relational data modeling.\",\n  \"icon_class\": \"lucide-server\",\n  \"sort_order\": 10,\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/skill-categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skill-categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Skill Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/skill-categories/{{skill_category_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skill-categories",
+                "{{skill_category_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Skill Category by Slug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/skill-categories/{{skill_category_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skill-categories",
+                "{{skill_category_slug}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Skill Category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated from Postman.\",\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/skill-categories/{{skill_category_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skill-categories",
+                "{{skill_category_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Skill Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Backend Engineering\",\n  \"description\": \"Replaced from Postman.\",\n  \"icon_class\": \"lucide-server\",\n  \"sort_order\": 10,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/skill-categories/{{skill_category_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skill-categories",
+                "{{skill_category_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Skill Category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/skill-categories/{{skill_category_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skill-categories",
+                "{{skill_category_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Skills",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Skills",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skills"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{skill_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "featured",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{skill_category_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "{{skill_category_slug}}",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{skill_search}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Skill",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"skill created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"skill_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": \"{{skill_category_id}}\",\n  \"name\": \"API Design\",\n  \"summary\": \"Designs clear HTTP resources and response contracts.\",\n  \"icon_class\": \"lucide-route\",\n  \"sort_order\": 10,\n  \"featured\": true,\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skills"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Skill by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/skills/{{skill_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skills",
+                "{{skill_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Skill",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Updated from Postman.\",\n  \"featured\": false,\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/skills/{{skill_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skills",
+                "{{skill_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Skill",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": \"{{skill_category_id}}\",\n  \"name\": \"API Design\",\n  \"summary\": \"Replaced from Postman.\",\n  \"icon_class\": \"lucide-route\",\n  \"sort_order\": 10,\n  \"featured\": true,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/skills/{{skill_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skills",
+                "{{skill_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Skill",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/skills/{{skill_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "skills",
+                "{{skill_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tools",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Tools",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tools",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tools"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{tool_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "featured",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "{{tool_category}}",
+                  "disabled": true
+                },
+                {
+                  "key": "tag",
+                  "value": "{{tool_tag}}",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{tool_search}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tool",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"tool created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"tool_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Codex\",\n  \"category\": \"AI & Coding Assistants\",\n  \"summary\": \"Agentic coding workflow for repository changes.\",\n  \"icon_class\": \"lucide-bot\",\n  \"tags\": [\n    \"ai\",\n    \"coding\",\n    \"agent\"\n  ],\n  \"sort_order\": 10,\n  \"featured\": true,\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tools",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tools"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tool by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tools/{{tool_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tools",
+                "{{tool_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tool",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Updated from Postman.\",\n  \"featured\": false,\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tools/{{tool_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tools",
+                "{{tool_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Tool",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Codex\",\n  \"category\": \"AI & Coding Assistants\",\n  \"summary\": \"Replaced from Postman.\",\n  \"icon_class\": \"lucide-bot\",\n  \"tags\": [\n    \"ai\",\n    \"coding\",\n    \"agent\"\n  ],\n  \"sort_order\": 10,\n  \"featured\": true,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tools/{{tool_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tools",
+                "{{tool_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Tool",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tools/{{tool_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tools",
+                "{{tool_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Intro",
       "auth": {
         "type": "bearer",
@@ -802,7 +1930,37 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Software Engineer\",\n  \"description\": \"I build backend systems, polished web experiences, and portfolio tools that are practical to operate.\"\n}"
+              "raw": "{\n  \"title\": \"AI Engineer\",\n  \"description\": \"I build AI-enabled products, backend systems, and polished interfaces that turn model capabilities into reliable user workflows.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/intro",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "intro"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Intro",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"AI Engineer\",\n  \"description\": \"I build AI-enabled products, backend systems, and polished interfaces that turn model capabilities into reliable user workflows.\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/intro",
@@ -938,6 +2096,18 @@
       "value": ""
     },
     {
+      "key": "link_id",
+      "value": ""
+    },
+    {
+      "key": "link_status",
+      "value": "draft"
+    },
+    {
+      "key": "link_search",
+      "value": "github"
+    },
+    {
       "key": "project_id",
       "value": ""
     },
@@ -996,6 +2166,66 @@
     {
       "key": "intro_profile_picture_path",
       "value": ""
+    },
+    {
+      "key": "article_id",
+      "value": ""
+    },
+    {
+      "key": "article_status",
+      "value": "draft"
+    },
+    {
+      "key": "article_search",
+      "value": "portfolio"
+    },
+    {
+      "key": "skill_category_id",
+      "value": ""
+    },
+    {
+      "key": "skill_category_slug",
+      "value": "backend-engineering"
+    },
+    {
+      "key": "skill_category_status",
+      "value": "draft"
+    },
+    {
+      "key": "skill_category_search",
+      "value": "backend"
+    },
+    {
+      "key": "skill_id",
+      "value": ""
+    },
+    {
+      "key": "skill_status",
+      "value": "draft"
+    },
+    {
+      "key": "skill_search",
+      "value": "api"
+    },
+    {
+      "key": "tool_id",
+      "value": ""
+    },
+    {
+      "key": "tool_status",
+      "value": "draft"
+    },
+    {
+      "key": "tool_category",
+      "value": "AI & Coding Assistants"
+    },
+    {
+      "key": "tool_tag",
+      "value": "ai"
+    },
+    {
+      "key": "tool_search",
+      "value": "codex"
     }
   ]
 }
