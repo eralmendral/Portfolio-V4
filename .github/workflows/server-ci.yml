@@ -15,7 +15,7 @@ on:
 
 jobs:
   quality:
-    name: Test, lint, format, and coverage
+    name: Test, lint, security, format, and coverage
     runs-on: ubuntu-latest
     env:
       COVERAGE_THRESHOLD: "35.0"
@@ -54,6 +54,12 @@ jobs:
 
       - name: Run tests
         run: go test -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Run security checks
+        run: gosec ./...
 
       - name: Check code coverage
         run: |
