@@ -17,6 +17,7 @@ import (
 	"github.com/eralme/server/internal/certificates"
 	"github.com/eralme/server/internal/intro"
 	"github.com/eralme/server/internal/links"
+	"github.com/eralme/server/internal/products"
 	"github.com/eralme/server/internal/projects"
 	"github.com/eralme/server/internal/skills"
 	"github.com/eralme/server/internal/tools"
@@ -93,12 +94,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	productStore, err := products.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	introStore, err := intro.NewPostgresStore(startupCtx, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	router, err := buildRouter(cfg, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, introStore)
+	router, err := buildRouter(cfg, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, productStore, introStore)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,7 +121,7 @@ func main() {
 	}
 }
 
-func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, introStore intro.Store) (http.Handler, error) {
+func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, productStore products.Store, introStore intro.Store) (http.Handler, error) {
 	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTIssuer, cfg.TokenTTL)
 
 	assetStore, err := uploadStore(cfg)
@@ -136,6 +142,7 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	linkHandler := links.NewHandler(linkStore)
 	skillHandler := skills.NewHandler(skillStore)
 	toolHandler := tools.NewHandler(toolStore)
+	productHandler := products.NewHandler(productStore)
 	introHandler := intro.NewHandler(introStore, intro.UploadConfig{
 		Store:    assetStore,
 		MaxBytes: cfg.MaxUploadBytes,
@@ -148,6 +155,7 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	mux.Handle("POST /auth/login", auth.LoginHandler(tokenService, cfg.AdminUsername, cfg.AdminPassword))
 
 	requireJWT := auth.RequireJWT(tokenService)
+	optionalJWT := auth.OptionalJWT(tokenService)
 	mux.Handle("GET /projects", http.HandlerFunc(projectHandler.HandleCollection))
 	mux.Handle("POST /projects", requireJWT(http.HandlerFunc(projectHandler.HandleCollection)))
 	mux.Handle("GET /projects/", http.HandlerFunc(projectHandler.HandleItem))
@@ -198,6 +206,14 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	mux.Handle("PATCH /tools/", requireJWT(http.HandlerFunc(toolHandler.HandleItem)))
 	mux.Handle("PUT /tools/", requireJWT(http.HandlerFunc(toolHandler.HandleItem)))
 	mux.Handle("DELETE /tools/", requireJWT(http.HandlerFunc(toolHandler.HandleItem)))
+	mux.Handle("GET /products/section", http.HandlerFunc(productHandler.HandleSection))
+	mux.Handle("PATCH /products/section", requireJWT(http.HandlerFunc(productHandler.HandleSection)))
+	mux.Handle("GET /products", optionalJWT(http.HandlerFunc(productHandler.HandleCollection)))
+	mux.Handle("POST /products", requireJWT(http.HandlerFunc(productHandler.HandleCollection)))
+	mux.Handle("GET /products/", optionalJWT(http.HandlerFunc(productHandler.HandleItem)))
+	mux.Handle("PATCH /products/", requireJWT(http.HandlerFunc(productHandler.HandleItem)))
+	mux.Handle("PUT /products/", requireJWT(http.HandlerFunc(productHandler.HandleItem)))
+	mux.Handle("DELETE /products/", requireJWT(http.HandlerFunc(productHandler.HandleItem)))
 	mux.Handle("GET /intro", http.HandlerFunc(introHandler.Handle))
 	mux.Handle("PATCH /intro", requireJWT(http.HandlerFunc(introHandler.Handle)))
 	mux.Handle("PUT /intro", requireJWT(http.HandlerFunc(introHandler.Handle)))
