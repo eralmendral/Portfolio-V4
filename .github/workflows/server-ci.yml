@@ -15,7 +15,7 @@ on:
 
 jobs:
   quality:
-    name: Test, format, and coverage
+    name: Test, lint, format, and coverage
     runs-on: ubuntu-latest
     env:
       COVERAGE_THRESHOLD: "35.0"
@@ -37,6 +37,9 @@ jobs:
       - name: Echo Go version
         run: go version
 
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
       - name: Check formatting
         run: |
           unformatted="$(gofmt -l .)"
@@ -45,6 +48,9 @@ jobs:
             echo "$unformatted"
             exit 1
           fi
+
+      - name: Run linting
+        run: staticcheck ./...
 
       - name: Run tests
         run: go test -covermode=atomic -coverprofile=coverage.out ./...
