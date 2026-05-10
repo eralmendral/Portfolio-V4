@@ -68,10 +68,10 @@ func (s *PostgresStore) List(ctx context.Context, filter ListFilter) ([]Project,
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT p.id, p.slug, p.title, p.summary, p.description, p.body,
 			p.tech_stack, p.tags, p.github_url, p.demo_url, p.featured,
-			p.status, p.created_at, p.updated_at, p.published_at
+			p.sort_order, p.status, p.created_at, p.updated_at, p.published_at
 		FROM projects p
 		WHERE `+strings.Join(where, " AND ")+`
-		ORDER BY p.created_at DESC
+		ORDER BY p.sort_order ASC, p.created_at DESC
 	`, args...)
 	if err != nil {
 		return nil, err
@@ -202,7 +202,7 @@ func (s *PostgresStore) get(ctx context.Context, runner dbRunner, idOrSlug strin
 	row := runner.QueryRowContext(ctx, `
 		SELECT p.id, p.slug, p.title, p.summary, p.description, p.body,
 			p.tech_stack, p.tags, p.github_url, p.demo_url, p.featured,
-			p.status, p.created_at, p.updated_at, p.published_at
+			p.sort_order, p.status, p.created_at, p.updated_at, p.published_at
 		FROM projects p
 		WHERE p.id = $1 OR p.slug = $1
 	`, idOrSlug)
@@ -218,7 +218,7 @@ func (s *PostgresStore) getForUpdate(ctx context.Context, runner dbRunner, idOrS
 	row := runner.QueryRowContext(ctx, `
 		SELECT p.id, p.slug, p.title, p.summary, p.description, p.body,
 			p.tech_stack, p.tags, p.github_url, p.demo_url, p.featured,
-			p.status, p.created_at, p.updated_at, p.published_at
+			p.sort_order, p.status, p.created_at, p.updated_at, p.published_at
 		FROM projects p
 		WHERE p.id = $1 OR p.slug = $1
 		FOR UPDATE
@@ -289,12 +289,12 @@ func upsertProject(ctx context.Context, runner dbRunner, project Project) error 
 	_, err = runner.ExecContext(ctx, `
 		INSERT INTO projects (
 			id, slug, title, summary, description, body, tech_stack, tags,
-			github_url, demo_url, featured, status, created_at, updated_at,
-			published_at
+			github_url, demo_url, featured, sort_order, status, created_at,
+			updated_at, published_at
 		)
 		VALUES (
 			$1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb,
-			$9, $10, $11, $12, $13, $14, $15
+			$9, $10, $11, $12, $13, $14, $15, $16
 		)
 		ON CONFLICT (id) DO UPDATE SET
 			slug = EXCLUDED.slug,
@@ -307,12 +307,13 @@ func upsertProject(ctx context.Context, runner dbRunner, project Project) error 
 			github_url = EXCLUDED.github_url,
 			demo_url = EXCLUDED.demo_url,
 			featured = EXCLUDED.featured,
+			sort_order = EXCLUDED.sort_order,
 			status = EXCLUDED.status,
 			updated_at = EXCLUDED.updated_at,
 			published_at = EXCLUDED.published_at
 	`, project.ID, project.Slug, project.Title, project.Summary, project.Description, project.Body,
 		string(techStack), string(tags), project.GitHubURL, project.DemoURL, project.Featured,
-		project.Status, project.CreatedAt, project.UpdatedAt, project.PublishedAt)
+		project.SortOrder, project.Status, project.CreatedAt, project.UpdatedAt, project.PublishedAt)
 	return err
 }
 
@@ -378,6 +379,7 @@ func scanProject(scanner projectScanner) (Project, error) {
 		&project.GitHubURL,
 		&project.DemoURL,
 		&project.Featured,
+		&project.SortOrder,
 		&project.Status,
 		&project.CreatedAt,
 		&project.UpdatedAt,
@@ -428,11 +430,15 @@ CREATE TABLE IF NOT EXISTS projects (
 	github_url TEXT NOT NULL DEFAULT '',
 	demo_url TEXT NOT NULL DEFAULT '',
 	featured BOOLEAN NOT NULL DEFAULT FALSE,
+	sort_order INTEGER NOT NULL DEFAULT 0,
 	status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 	published_at TIMESTAMPTZ
 );
+
+ALTER TABLE projects
+	ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS project_images (
 	id TEXT PRIMARY KEY,
@@ -462,4 +468,13 @@ CREATE INDEX IF NOT EXISTS projects_status_created_at
 
 CREATE INDEX IF NOT EXISTS projects_featured_created_at
 	ON projects(featured, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS projects_sort_order_created_at
+	ON projects(sort_order ASC, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS projects_status_sort_order
+	ON projects(status, sort_order ASC, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS projects_featured_sort_order
+	ON projects(featured, sort_order ASC, created_at DESC);
 `

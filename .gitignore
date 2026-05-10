@@ -1,0 +1,15 @@
+# IDE and editor metadata
+.idea/
+.vscode/
+.vs/
+.fleet/
+.zed/
+*.iml
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# OS metadata
+.DS_Store
+Thumbs.db

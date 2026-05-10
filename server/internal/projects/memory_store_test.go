@@ -41,6 +41,9 @@ func (s *memoryStore) List(_ context.Context, filter ListFilter) ([]Project, err
 	}
 
 	sort.Slice(projects, func(i, j int) bool {
+		if projects[i].SortOrder != projects[j].SortOrder {
+			return projects[i].SortOrder < projects[j].SortOrder
+		}
 		return projects[i].CreatedAt.After(projects[j].CreatedAt)
 	})
 

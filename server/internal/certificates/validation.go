@@ -1,8 +1,7 @@
-package projects
+package certificates
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -23,33 +22,36 @@ func (e validationError) Fields() map[string]string {
 	return e.fields
 }
 
-func validateCreate(input CreateProjectRequest) error {
+func validateCreate(input CreateCertificateRequest) error {
 	fields := make(map[string]string)
 
 	if strings.TrimSpace(input.Title) == "" {
 		fields["title"] = "title is required"
 	}
+	if strings.TrimSpace(input.Issuer) == "" {
+		fields["issuer"] = "issuer is required"
+	}
 	validateSlug(input.Slug, fields)
 	validateStatus(input.Status, fields)
 	validateSortOrder("sort_order", input.SortOrder, fields)
-	validateURL("github_url", input.GitHubURL, fields)
-	validateURL("demo_url", input.DemoURL, fields)
+	validateURL("credential_url", input.CredentialURL, fields)
+	validateDates(input.IssuedAt, input.ExpiresAt, fields)
 
-	if input.MainImage != nil {
-		validateImageInput("main_image", *input.MainImage, fields)
-	}
-	for i, image := range input.Images {
-		validateImageInput(fmt.Sprintf("images[%d]", i), image, fields)
+	if input.Image != nil {
+		validateImageInput("image", *input.Image, fields)
 	}
 
 	return fieldsError(fields)
 }
 
-func validateUpdate(input UpdateProjectRequest) error {
+func validateUpdate(input UpdateCertificateRequest) error {
 	fields := make(map[string]string)
 
 	if input.Title != nil && strings.TrimSpace(*input.Title) == "" {
 		fields["title"] = "title cannot be blank"
+	}
+	if input.Issuer != nil && strings.TrimSpace(*input.Issuer) == "" {
+		fields["issuer"] = "issuer cannot be blank"
 	}
 	if input.Slug != nil {
 		validateSlug(*input.Slug, fields)
@@ -60,28 +62,15 @@ func validateUpdate(input UpdateProjectRequest) error {
 	if input.SortOrder != nil {
 		validateSortOrder("sort_order", *input.SortOrder, fields)
 	}
-	if input.GitHubURL != nil {
-		validateURL("github_url", *input.GitHubURL, fields)
+	if input.CredentialURL != nil {
+		validateURL("credential_url", *input.CredentialURL, fields)
 	}
-	if input.DemoURL != nil {
-		validateURL("demo_url", *input.DemoURL, fields)
-	}
-	if input.MainImage != nil {
-		validateImageInput("main_image", *input.MainImage, fields)
-	}
-	if input.Images != nil {
-		for i, image := range *input.Images {
-			validateImageInput(fmt.Sprintf("images[%d]", i), image, fields)
-		}
+	validateDates(input.IssuedAt, input.ExpiresAt, fields)
+	if input.Image != nil {
+		validateImageInput("image", *input.Image, fields)
 	}
 
 	return fieldsError(fields)
-}
-
-func validateSortOrder(field string, sortOrder int, fields map[string]string) {
-	if sortOrder < 0 {
-		fields[field] = "sort order must be zero or greater"
-	}
 }
 
 func validateSlug(slug string, fields map[string]string) {
@@ -105,6 +94,12 @@ func validateStatus(status string, fields map[string]string) {
 	}
 }
 
+func validateSortOrder(field string, sortOrder int, fields map[string]string) {
+	if sortOrder < 0 {
+		fields[field] = "sort order must be zero or greater"
+	}
+}
+
 func validateURL(field string, value string, fields map[string]string) {
 	if strings.TrimSpace(value) == "" {
 		return
@@ -116,12 +111,18 @@ func validateURL(field string, value string, fields map[string]string) {
 	}
 }
 
-func validateImageInput(field string, input ProjectImageInput, fields map[string]string) {
+func validateImageInput(field string, input CertificateImageInput, fields map[string]string) {
 	if strings.TrimSpace(input.URL) == "" {
 		fields[field+".url"] = "image URL is required"
 		return
 	}
 	validateURL(field+".url", input.URL, fields)
+}
+
+func validateDates(issuedAt *time.Time, expiresAt *time.Time, fields map[string]string) {
+	if issuedAt != nil && expiresAt != nil && expiresAt.Before(*issuedAt) {
+		fields["expires_at"] = "expires_at cannot be before issued_at"
+	}
 }
 
 func normalizeStatus(status string) string {
@@ -134,18 +135,6 @@ func normalizeStatus(status string) string {
 
 func normalizeURL(value string) string {
 	return strings.TrimSpace(value)
-}
-
-func publishTime(status string, provided *time.Time) *time.Time {
-	if provided != nil {
-		published := provided.UTC()
-		return &published
-	}
-	if status == StatusPublished {
-		now := time.Now().UTC()
-		return &now
-	}
-	return nil
 }
 
 func fieldsError(fields map[string]string) error {

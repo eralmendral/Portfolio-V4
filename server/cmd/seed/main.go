@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/eralme/server/internal/certificates"
 	"github.com/eralme/server/internal/projects"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -32,30 +33,55 @@ func main() {
 		log.Fatalf("connect postgres: %v", err)
 	}
 
-	store, err := projects.NewPostgresStore(ctx, db)
+	projectStore, err := projects.NewPostgresStore(ctx, db)
 	if err != nil {
-		log.Fatalf("migrate postgres: %v", err)
+		log.Fatalf("migrate projects postgres: %v", err)
+	}
+	certificateStore, err := certificates.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate certificates postgres: %v", err)
 	}
 
-	samples := sampleProjects()
-	for _, project := range samples {
-		if err := deleteIfExists(ctx, store, project.ID); err != nil {
+	projectSamples := sampleProjects()
+	for _, project := range projectSamples {
+		if err := deleteProjectIfExists(ctx, projectStore, project.ID); err != nil {
 			log.Fatalf("delete sample %q: %v", project.ID, err)
 		}
-		if err := deleteIfExists(ctx, store, project.Slug); err != nil {
+		if err := deleteProjectIfExists(ctx, projectStore, project.Slug); err != nil {
 			log.Fatalf("delete sample %q: %v", project.Slug, err)
 		}
-		if _, err := store.Create(ctx, project); err != nil {
+		if _, err := projectStore.Create(ctx, project); err != nil {
 			log.Fatalf("create sample %q: %v", project.Slug, err)
 		}
 	}
 
-	fmt.Printf("seeded %d sample projects\n", len(samples))
+	certificateSamples := sampleCertificates()
+	for _, certificate := range certificateSamples {
+		if err := deleteCertificateIfExists(ctx, certificateStore, certificate.ID); err != nil {
+			log.Fatalf("delete certificate sample %q: %v", certificate.ID, err)
+		}
+		if err := deleteCertificateIfExists(ctx, certificateStore, certificate.Slug); err != nil {
+			log.Fatalf("delete certificate sample %q: %v", certificate.Slug, err)
+		}
+		if _, err := certificateStore.Create(ctx, certificate); err != nil {
+			log.Fatalf("create certificate sample %q: %v", certificate.Slug, err)
+		}
+	}
+
+	fmt.Printf("seeded %d sample projects and %d sample certificates\n", len(projectSamples), len(certificateSamples))
 }
 
-func deleteIfExists(ctx context.Context, store projects.Store, idOrSlug string) error {
+func deleteProjectIfExists(ctx context.Context, store projects.Store, idOrSlug string) error {
 	err := store.Delete(ctx, idOrSlug)
 	if errors.Is(err, projects.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteCertificateIfExists(ctx context.Context, store certificates.Store, idOrSlug string) error {
+	err := store.Delete(ctx, idOrSlug)
+	if errors.Is(err, certificates.ErrNotFound) {
 		return nil
 	}
 	return err
@@ -104,6 +130,7 @@ func sampleProjects() []projects.Project {
 			GitHubURL:   "https://github.com/eralmendral/Portfolio-V4",
 			DemoURL:     "https://example.com/portfolio-api-server",
 			Featured:    true,
+			SortOrder:   10,
 			Status:      projects.StatusPublished,
 			CreatedAt:   firstPublishedAt,
 			PublishedAt: &firstPublishedAt,
@@ -146,9 +173,60 @@ func sampleProjects() []projects.Project {
 			GitHubURL:   "https://github.com/eralmendral/Portfolio-V4",
 			DemoURL:     "https://example.com/portfolio-admin-dashboard",
 			Featured:    false,
+			SortOrder:   20,
 			Status:      projects.StatusPublished,
 			CreatedAt:   secondPublishedAt,
 			PublishedAt: &secondPublishedAt,
+		},
+	}
+}
+
+func sampleCertificates() []certificates.Certificate {
+	firstIssuedAt := time.Date(2026, time.February, 10, 9, 0, 0, 0, time.UTC)
+	secondIssuedAt := time.Date(2026, time.March, 18, 9, 0, 0, 0, time.UTC)
+
+	return []certificates.Certificate{
+		{
+			ID:            "sample-go-api-certificate",
+			Slug:          "go-api-certificate",
+			Title:         "Go API Engineering Certificate",
+			Issuer:        "Open Source Academy",
+			Summary:       "Credential for building production-grade Go HTTP APIs.",
+			Description:   "Covers PostgreSQL-backed CRUD, JWT authentication, containerized deployment, and image upload workflows.",
+			CredentialURL: "https://example.com/certificates/go-api-certificate",
+			Image: &certificates.CertificateImage{
+				ID:         "sample-go-api-certificate-image",
+				URL:        "https://picsum.photos/seed/go-api-certificate/1200/800",
+				AltText:    "Go API Engineering Certificate preview",
+				Caption:    "Go API Engineering Certificate",
+				UploadedAt: firstIssuedAt,
+			},
+			Featured:  true,
+			SortOrder: 10,
+			Status:    certificates.StatusPublished,
+			IssuedAt:  &firstIssuedAt,
+			CreatedAt: firstIssuedAt,
+		},
+		{
+			ID:            "sample-cloud-deployment-certificate",
+			Slug:          "cloud-deployment-certificate",
+			Title:         "Cloud Deployment Certificate",
+			Issuer:        "Portfolio Labs",
+			Summary:       "Credential for Docker-based app and database deployments.",
+			Description:   "Demonstrates container orchestration, environment configuration, persistent database volumes, and operational checks.",
+			CredentialURL: "https://example.com/certificates/cloud-deployment-certificate",
+			Image: &certificates.CertificateImage{
+				ID:         "sample-cloud-deployment-certificate-image",
+				URL:        "https://picsum.photos/seed/cloud-deployment-certificate/1200/800",
+				AltText:    "Cloud Deployment Certificate preview",
+				Caption:    "Cloud Deployment Certificate",
+				UploadedAt: secondIssuedAt,
+			},
+			Featured:  false,
+			SortOrder: 20,
+			Status:    certificates.StatusPublished,
+			IssuedAt:  &secondIssuedAt,
+			CreatedAt: secondIssuedAt,
 		},
 	}
 }

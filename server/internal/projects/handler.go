@@ -187,6 +187,7 @@ func projectFromCreate(input CreateProjectRequest) Project {
 		GitHubURL:   normalizeURL(input.GitHubURL),
 		DemoURL:     normalizeURL(input.DemoURL),
 		Featured:    input.Featured,
+		SortOrder:   input.SortOrder,
 		Status:      status,
 		PublishedAt: publishTime(status, input.PublishedAt),
 	}
@@ -249,6 +250,9 @@ func applyUpdate(project *Project, input UpdateProjectRequest) {
 	}
 	if input.Featured != nil {
 		project.Featured = *input.Featured
+	}
+	if input.SortOrder != nil {
+		project.SortOrder = *input.SortOrder
 	}
 	if input.Status != nil {
 		project.Status = normalizeStatus(*input.Status)

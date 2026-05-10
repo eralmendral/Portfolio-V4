@@ -21,4 +21,11 @@ tmp/
 .DS_Store
 .idea/
 .vscode/
+.vs/
+.fleet/
+.zed/
+*.iml
+*.code-workspace
 *.swp
+*.swo
+*~

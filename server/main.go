@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/eralme/server/internal/auth"
+	"github.com/eralme/server/internal/certificates"
 	"github.com/eralme/server/internal/projects"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -50,12 +51,17 @@ func main() {
 	}
 	defer db.Close()
 
-	store, err := projects.NewPostgresStore(startupCtx, db)
+	projectStore, err := projects.NewPostgresStore(startupCtx, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	router, err := buildRouter(cfg, store)
+	certificateStore, err := certificates.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	router, err := buildRouter(cfg, projectStore, certificateStore)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -72,7 +78,7 @@ func main() {
 	}
 }
 
-func buildRouter(cfg config, store projects.Store) (http.Handler, error) {
+func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store) (http.Handler, error) {
 	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTIssuer, cfg.TokenTTL)
 
 	assetStore, err := uploadStore(cfg)
@@ -80,7 +86,11 @@ func buildRouter(cfg config, store projects.Store) (http.Handler, error) {
 		return nil, err
 	}
 
-	projectHandler := projects.NewHandler(store, projects.UploadConfig{
+	projectHandler := projects.NewHandler(projectStore, projects.UploadConfig{
+		Store:    assetStore,
+		MaxBytes: cfg.MaxUploadBytes,
+	})
+	certificateHandler := certificates.NewHandler(certificateStore, certificates.UploadConfig{
 		Store:    assetStore,
 		MaxBytes: cfg.MaxUploadBytes,
 	})
@@ -95,6 +105,9 @@ func buildRouter(cfg config, store projects.Store) (http.Handler, error) {
 	mux.Handle("GET /projects", requireJWT(http.HandlerFunc(projectHandler.HandleCollection)))
 	mux.Handle("POST /projects", requireJWT(http.HandlerFunc(projectHandler.HandleCollection)))
 	mux.Handle("/projects/", requireJWT(http.HandlerFunc(projectHandler.HandleItem)))
+	mux.Handle("GET /certificates", requireJWT(http.HandlerFunc(certificateHandler.HandleCollection)))
+	mux.Handle("POST /certificates", requireJWT(http.HandlerFunc(certificateHandler.HandleCollection)))
+	mux.Handle("/certificates/", requireJWT(http.HandlerFunc(certificateHandler.HandleItem)))
 
 	if cfg.UploadStorage == "local" && cfg.UploadDir != "" {
 		mux.Handle("/uploads/projects/", http.StripPrefix("/uploads/projects/", http.FileServer(http.Dir(cfg.UploadDir))))

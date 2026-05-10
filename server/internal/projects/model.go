@@ -22,6 +22,7 @@ type Project struct {
 	GitHubURL   string         `json:"github_url,omitempty"`
 	DemoURL     string         `json:"demo_url,omitempty"`
 	Featured    bool           `json:"featured"`
+	SortOrder   int            `json:"sort_order"`
 	Status      string         `json:"status"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
@@ -62,6 +63,7 @@ type CreateProjectRequest struct {
 	GitHubURL   string              `json:"github_url"`
 	DemoURL     string              `json:"demo_url"`
 	Featured    bool                `json:"featured"`
+	SortOrder   int                 `json:"sort_order"`
 	Status      string              `json:"status"`
 	PublishedAt *time.Time          `json:"published_at"`
 }
@@ -79,6 +81,7 @@ type UpdateProjectRequest struct {
 	GitHubURL   *string              `json:"github_url"`
 	DemoURL     *string              `json:"demo_url"`
 	Featured    *bool                `json:"featured"`
+	SortOrder   *int                 `json:"sort_order"`
 	Status      *string              `json:"status"`
 	PublishedAt *time.Time           `json:"published_at"`
 }

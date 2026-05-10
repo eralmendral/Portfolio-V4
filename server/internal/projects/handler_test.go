@@ -202,6 +202,7 @@ func createProject(t *testing.T, api testAPI) Project {
 		"github_url": "https://github.com/example/portfolio",
 		"demo_url": "https://example.com",
 		"featured": true,
+		"sort_order": 10,
 		"status": "published"
 	}`
 

@@ -30,8 +30,8 @@ docker compose up --build
 The API listens on `http://localhost:8080`, and PostgreSQL is exposed on
 `localhost:5433` by default to avoid conflicts with a local Postgres instance.
 Set `POSTGRES_HOST_PORT=5432` if you want Compose to bind host port `5432`.
-Project rows are stored in the `postgres-data` Docker volume. Uploaded local
-files are stored in the `uploads` Docker volume.
+Project and certificate rows are stored in the `postgres-data` Docker volume.
+Uploaded local files are stored in the `uploads` Docker volume.
 
 ## Local Run Script
 
@@ -46,20 +46,20 @@ defaults, and runs `go run .`. It uses `POSTGRES_HOST_PORT=5433` by default.
 
 ## Sample Data
 
-Seed two sample projects into the local PostgreSQL database:
+Seed sample projects and certificates into the local PostgreSQL database:
 
 ```sh
 ./scripts/seed-sample-data.sh
 ```
 
-The seed command replaces only the two sample rows by their stable IDs/slugs.
-It does not wipe other projects.
+The seed command replaces only the sample rows by their stable IDs/slugs. It
+does not wipe other projects or certificates.
 
 ## Postman
 
 Import `postman/portfolio-server.postman_collection.json` into Postman. Run the
 `Auth / Login` request first; it stores the JWT in the collection variables for
-the protected project requests.
+the protected project and certificate requests.
 
 Local development uploads use server disk by default:
 
@@ -85,7 +85,7 @@ Uploads accept only `.png`, `.jpg`, and `.jpeg` files whose detected content typ
 
 ## Endpoints
 
-All `/projects` routes require `Authorization: Bearer <jwt>`.
+All `/projects` and `/certificates` routes require `Authorization: Bearer <jwt>`.
 
 ```txt
 POST   /auth/login
@@ -98,6 +98,14 @@ DELETE /projects/{id-or-slug}
 POST   /projects/{id-or-slug}/images/main
 POST   /projects/{id-or-slug}/images
 DELETE /projects/{id-or-slug}/images/{image-id}
+GET    /certificates
+POST   /certificates
+GET    /certificates/{id-or-slug}
+PATCH  /certificates/{id-or-slug}
+PUT    /certificates/{id-or-slug}
+DELETE /certificates/{id-or-slug}
+POST   /certificates/{id-or-slug}/image
+DELETE /certificates/{id-or-slug}/image
 ```
 
 Image upload routes expect `multipart/form-data`. Use field `image` for the main image, and `images` or repeated `image` fields for gallery uploads.

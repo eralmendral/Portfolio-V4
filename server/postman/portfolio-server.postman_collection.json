@@ -173,7 +173,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"slug\": \"{{project_slug}}\",\n  \"title\": \"Sample Portfolio Project\",\n  \"summary\": \"A project created from Postman.\",\n  \"description\": \"Use this request to create a project through the API.\",\n  \"body\": \"Long-form project details can go here.\",\n  \"tech_stack\": [\n    \"Go\",\n    \"PostgreSQL\"\n  ],\n  \"tags\": [\n    \"api\",\n    \"portfolio\"\n  ],\n  \"main_image\": {\n    \"url\": \"https://example.com/images/sample-main.jpg\",\n    \"alt_text\": \"Sample main image\",\n    \"caption\": \"Sample image\",\n    \"sort_order\": 0\n  },\n  \"github_url\": \"https://github.com/example/project\",\n  \"demo_url\": \"https://example.com/project\",\n  \"featured\": true,\n  \"status\": \"draft\"\n}"
+              "raw": "{\n  \"slug\": \"{{project_slug}}\",\n  \"title\": \"Sample Portfolio Project\",\n  \"summary\": \"A project created from Postman.\",\n  \"description\": \"Use this request to create a project through the API.\",\n  \"body\": \"Long-form project details can go here.\",\n  \"tech_stack\": [\n    \"Go\",\n    \"PostgreSQL\"\n  ],\n  \"tags\": [\n    \"api\",\n    \"portfolio\"\n  ],\n  \"main_image\": {\n    \"url\": \"https://example.com/images/sample-main.jpg\",\n    \"alt_text\": \"Sample main image\",\n    \"caption\": \"Sample image\",\n    \"sort_order\": 0\n  },\n  \"github_url\": \"https://github.com/example/project\",\n  \"demo_url\": \"https://example.com/project\",\n  \"featured\": true,\n  \"sort_order\": 10,\n  \"status\": \"draft\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/projects",
@@ -249,7 +249,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"summary\": \"Updated from Postman.\",\n  \"featured\": false,\n  \"status\": \"published\"\n}"
+              "raw": "{\n  \"summary\": \"Updated from Postman.\",\n  \"featured\": false,\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/projects/{{project_id}}",
@@ -449,6 +449,307 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Certificates",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Certificates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/certificates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{certificate_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "featured",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{certificate_search}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Certificate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"certificate created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"certificate_id\", body.id);",
+                  "}",
+                  "if (body.slug) {",
+                  "  pm.collectionVariables.set(\"certificate_slug\", body.slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slug\": \"{{certificate_slug}}\",\n  \"title\": \"Sample Certificate\",\n  \"issuer\": \"Portfolio Labs\",\n  \"summary\": \"A certificate created from Postman.\",\n  \"description\": \"Use this request to create a certificate through the API.\",\n  \"credential_url\": \"https://example.com/certificates/sample\",\n  \"image\": {\n    \"url\": \"https://example.com/images/sample-certificate.jpg\",\n    \"alt_text\": \"Sample certificate image\",\n    \"caption\": \"Sample certificate\"\n  },\n  \"featured\": true,\n  \"sort_order\": 10,\n  \"status\": \"draft\",\n  \"issued_at\": \"2026-05-01T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/certificates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Certificate by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/certificates/{{certificate_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates",
+                "{{certificate_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Certificate by Slug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/certificates/{{certificate_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates",
+                "{{certificate_slug}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Certificate",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Updated from Postman.\",\n  \"featured\": false,\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/certificates/{{certificate_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates",
+                "{{certificate_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Certificate",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/certificates/{{certificate_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates",
+                "{{certificate_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Certificate Images",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Upload Certificate Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"certificate image uploaded\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.image && body.image.id) {",
+                  "  pm.collectionVariables.set(\"certificate_image_id\", body.image.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "{{certificate_image_path}}"
+                },
+                {
+                  "key": "alt_text",
+                  "value": "Uploaded certificate image",
+                  "type": "text"
+                },
+                {
+                  "key": "caption",
+                  "value": "Uploaded through Postman",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/certificates/{{certificate_id}}/image",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates",
+                "{{certificate_id}}",
+                "image"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Certificate Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/certificates/{{certificate_id}}/image",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates",
+                "{{certificate_id}}",
+                "image"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
@@ -494,6 +795,30 @@
     },
     {
       "key": "gallery_image_path",
+      "value": ""
+    },
+    {
+      "key": "certificate_id",
+      "value": ""
+    },
+    {
+      "key": "certificate_slug",
+      "value": "sample-certificate"
+    },
+    {
+      "key": "certificate_status",
+      "value": "draft"
+    },
+    {
+      "key": "certificate_search",
+      "value": "certificate"
+    },
+    {
+      "key": "certificate_image_id",
+      "value": ""
+    },
+    {
+      "key": "certificate_image_path",
       "value": ""
     }
   ]
