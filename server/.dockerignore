@@ -1,0 +1,8 @@
+.git
+.gitignore
+.DS_Store
+data
+public/uploads
+tmp
+*.test
+coverage.out

@@ -4,6 +4,13 @@ Go API server for the portfolio site.
 
 ## Configuration
 
+The server stores project data in PostgreSQL. `DATABASE_URL` is required; the
+server does not use `projects.json` or any other JSON file as a data store.
+
+```sh
+DATABASE_URL=postgres://portfolio:portfolio@localhost:5432/portfolio?sslmode=disable
+```
+
 Required for authenticated project management:
 
 ```sh
@@ -11,6 +18,18 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-me
 JWT_SECRET=replace-with-a-long-random-secret
 ```
+
+## Docker
+
+Run the API and PostgreSQL together:
+
+```sh
+docker compose up --build
+```
+
+The API listens on `http://localhost:8080`, and PostgreSQL is exposed on
+`localhost:5432`. Project rows are stored in the `postgres-data` Docker volume.
+Uploaded local files are stored in the `uploads` Docker volume.
 
 Local development uploads use server disk by default:
 

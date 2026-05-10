@@ -10,7 +10,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -26,15 +25,9 @@ type testAPI struct {
 func newTestAPI(t *testing.T) testAPI {
 	t.Helper()
 
-	dataDir := t.TempDir()
 	uploadDir := t.TempDir()
 
-	store, err := NewFileStore(filepath.Join(dataDir, "projects.json"))
-	if err != nil {
-		t.Fatalf("new store: %v", err)
-	}
-
-	projectHandler := NewHandler(store, UploadConfig{
+	projectHandler := NewHandler(newMemoryStore(), UploadConfig{
 		Dir:      uploadDir,
 		BaseURL:  "/uploads/projects",
 		MaxBytes: 1 << 20,

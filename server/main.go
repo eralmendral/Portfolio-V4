@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,11 +14,12 @@ import (
 
 	"github.com/eralme/server/internal/auth"
 	"github.com/eralme/server/internal/projects"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type config struct {
 	Addr           string
-	DataDir        string
+	DatabaseURL    string
 	UploadStorage  string
 	UploadDir      string
 	UploadBaseURL  string
@@ -38,7 +41,21 @@ type config struct {
 func main() {
 	cfg := loadConfig()
 
-	router, err := buildRouter(cfg)
+	startupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	db, err := openDatabase(startupCtx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	store, err := projects.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	router, err := buildRouter(cfg, store)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,13 +72,8 @@ func main() {
 	}
 }
 
-func buildRouter(cfg config) (http.Handler, error) {
+func buildRouter(cfg config, store projects.Store) (http.Handler, error) {
 	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTIssuer, cfg.TokenTTL)
-
-	store, err := projects.NewFileStore(filepath.Join(cfg.DataDir, "projects.json"))
-	if err != nil {
-		return nil, err
-	}
 
 	assetStore, err := uploadStore(cfg)
 	if err != nil {
@@ -91,6 +103,24 @@ func buildRouter(cfg config) (http.Handler, error) {
 	return withCommonHeaders(mux), nil
 }
 
+func openDatabase(ctx context.Context, databaseURL string) (*sql.DB, error) {
+	if strings.TrimSpace(databaseURL) == "" {
+		return nil, fmt.Errorf("DATABASE_URL is required")
+	}
+
+	db, err := sql.Open("pgx", databaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("open postgres: %w", err)
+	}
+
+	if err := db.PingContext(ctx); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("connect postgres: %w", err)
+	}
+
+	return db, nil
+}
+
 func loadConfig() config {
 	secret := getenv("JWT_SECRET", "development-secret-change-me")
 	if secret == "development-secret-change-me" {
@@ -99,7 +129,7 @@ func loadConfig() config {
 
 	return config{
 		Addr:           getenv("ADDR", ":8080"),
-		DataDir:        getenv("DATA_DIR", "data"),
+		DatabaseURL:    os.Getenv("DATABASE_URL"),
 		UploadStorage:  strings.ToLower(getenv("UPLOAD_STORAGE", "local")),
 		UploadDir:      getenv("UPLOAD_DIR", filepath.Join("public", "uploads", "projects")),
 		UploadBaseURL:  getenv("UPLOAD_BASE_URL", "/uploads/projects"),
