@@ -443,24 +443,6 @@ export function App() {
     }
   }, [api, articleFilter, clearError, selectedArticleID])
 
-  const loadWorkExperiences = useCallback(async () => {
-    setLoading(true)
-    clearError()
-    try {
-      const next = await api.listWorkExperiences(workFilter)
-      setWorkExperiences(next)
-      if (next.length === 0) {
-        newWorkExperienceState(setSelectedWorkExperienceID, setWorkExperienceForm, setWorkExperienceMode)
-      } else if (!next.some(item => item.id === selectedWorkExperienceID)) {
-        selectWorkExperienceState(next[0], setSelectedWorkExperienceID, setWorkExperienceForm, setWorkExperienceMode)
-      }
-    } catch (nextError) {
-      handleError(nextError, setError, setFieldErrors)
-    } finally {
-      setLoading(false)
-    }
-  }, [api, clearError, selectedWorkExperienceID, workFilter])
-
   const loadLinks = useCallback(async () => {
     setLoading(true)
     clearError()
@@ -478,60 +460,6 @@ export function App() {
       setLoading(false)
     }
   }, [api, clearError, linkFilter, selectedLinkID])
-
-  const loadSkillCategories = useCallback(async () => {
-    setLoading(true)
-    clearError()
-    try {
-      const next = await api.listSkillCategories(skillCategoryFilter)
-      setSkillCategories(next)
-      if (next.length === 0) {
-        newSkillCategoryState(setSelectedSkillCategoryID, setSkillCategoryForm, setSkillCategoryMode)
-      } else if (!next.some(item => item.id === selectedSkillCategoryID)) {
-        selectSkillCategoryState(next[0], setSelectedSkillCategoryID, setSkillCategoryForm, setSkillCategoryMode)
-      }
-    } catch (nextError) {
-      handleError(nextError, setError, setFieldErrors)
-    } finally {
-      setLoading(false)
-    }
-  }, [api, clearError, selectedSkillCategoryID, skillCategoryFilter])
-
-  const loadSkills = useCallback(async () => {
-    setLoading(true)
-    clearError()
-    try {
-      const next = await api.listSkills(skillFilter)
-      setSkills(next)
-      if (next.length === 0) {
-        newSkillState(setSelectedSkillID, setSkillForm, setSkillMode)
-      } else if (!next.some(item => item.id === selectedSkillID)) {
-        selectSkillState(next[0], setSelectedSkillID, setSkillForm, setSkillMode)
-      }
-    } catch (nextError) {
-      handleError(nextError, setError, setFieldErrors)
-    } finally {
-      setLoading(false)
-    }
-  }, [api, clearError, selectedSkillID, skillFilter])
-
-  const loadTools = useCallback(async () => {
-    setLoading(true)
-    clearError()
-    try {
-      const next = await api.listTools(toolFilter)
-      setTools(next)
-      if (next.length === 0) {
-        newToolState(setSelectedToolID, setToolForm, setToolMode)
-      } else if (!next.some(item => item.id === selectedToolID)) {
-        selectToolState(next[0], setSelectedToolID, setToolForm, setToolMode)
-      }
-    } catch (nextError) {
-      handleError(nextError, setError, setFieldErrors)
-    } finally {
-      setLoading(false)
-    }
-  }, [api, clearError, selectedToolID, toolFilter])
 
   const loadIntro = useCallback(async () => {
     setLoading(true)
@@ -557,20 +485,12 @@ export function App() {
         return loadCertificates()
       case 'articles':
         return loadArticles()
-      case 'work':
-        return loadWorkExperiences()
       case 'links':
         return loadLinks()
-      case 'skill-categories':
-        return loadSkillCategories()
-      case 'skills':
-        return loadSkills()
-      case 'tools':
-        return loadTools()
       case 'intro':
         return loadIntro()
     }
-  }, [activeTab, loadArticles, loadCertificates, loadIntro, loadLinks, loadProjects, loadSkillCategories, loadSkills, loadTools, loadWorkExperiences])
+  }, [activeTab, loadArticles, loadCertificates, loadIntro, loadLinks, loadProjects])
 
   useEffect(() => {
     if (token) {
@@ -599,20 +519,12 @@ export function App() {
     setProjects([])
     setCertificates([])
     setArticles([])
-    setWorkExperiences([])
     setLinks([])
-    setSkillCategories([])
-    setSkills([])
-    setTools([])
     setIntro(null)
     newProjectState(setSelectedProjectID, setProjectForm, setProjectMode)
     newCertificateState(setSelectedCertificateID, setCertificateForm, setCertificateMode)
     newArticleState(setSelectedArticleID, setArticleForm, setArticleMode)
-    newWorkExperienceState(setSelectedWorkExperienceID, setWorkExperienceForm, setWorkExperienceMode)
     newLinkState(setSelectedLinkID, setLinkForm, setLinkMode)
-    newSkillCategoryState(setSelectedSkillCategoryID, setSkillCategoryForm, setSkillCategoryMode)
-    newSkillState(setSelectedSkillID, setSkillForm, setSkillMode)
-    newToolState(setSelectedToolID, setToolForm, setToolMode)
     setIntroForm(emptyIntroForm)
     clearError()
   }, [clearError])
