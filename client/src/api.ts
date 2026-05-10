@@ -34,9 +34,12 @@ import type {
 
 const DEFAULT_API_BASE_URL = 'http://localhost:8080'
 const ALL_STATUSES: Status[] = ['draft', 'published', 'archived']
+const CONFIGURED_API_BASE_URL = typeof __PUBLIC_API_BASE_URL__ === 'string'
+  ? __PUBLIC_API_BASE_URL__
+  : undefined
 
 export const API_BASE_URL = (
-  import.meta.env.PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL
+  CONFIGURED_API_BASE_URL ?? DEFAULT_API_BASE_URL
 ).replace(/\/$/, '')
 
 interface LoginResponse {
@@ -116,20 +119,23 @@ export interface ApiClient {
 
 export function createApiClient(getToken: () => string | null): ApiClient {
   const request = async <T>(path: string, init: RequestInit = {}): Promise<T> => {
-    const headers = new Headers(init.headers)
+    const HeadersCtor = headersConstructor()
+    const fetchRef = fetchFunction()
+    const FormDataCtor = formDataConstructor()
+    const headers = new HeadersCtor(init.headers)
     const token = getToken()
 
     if (token) {
       headers.set('Authorization', `Bearer ${token}`)
     }
-    if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    if (init.body && !(FormDataCtor && init.body instanceof FormDataCtor) && !headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json')
     }
     if (!headers.has('Accept')) {
       headers.set('Accept', 'application/json')
     }
 
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const response = await fetchRef(`${API_BASE_URL}${path}`, {
       ...init,
       headers,
     })
@@ -151,7 +157,11 @@ export function createApiClient(getToken: () => string | null): ApiClient {
   }
 
   const upload = <T>(path: string, file: File, altText: string, caption: string, field: 'image' | 'images') => {
-    const body = new FormData()
+    const FormDataCtor = formDataConstructor()
+    if (!FormDataCtor) {
+      throw new Error('File uploads are not available in this runtime.')
+    }
+    const body = new FormDataCtor()
     body.append(field, file)
     body.append('alt_text', altText)
     body.append('caption', caption)
@@ -568,4 +578,34 @@ function toApiError(status: number, payload: unknown): ApiError {
 
 function isApiErrorPayload(payload: unknown): payload is ApiErrorPayload {
   return typeof payload === 'object' && payload !== null && ('error' in payload || 'fields' in payload)
+}
+
+function fetchFunction(): typeof fetch {
+  const windowRef = webWindow()
+  const fetchRef = (globalThis as typeof globalThis & { fetch?: typeof fetch }).fetch
+    ?? windowRef?.fetch
+  if (!fetchRef) {
+    throw new Error('Fetch is not available in this runtime.')
+  }
+  return fetchRef.bind(windowRef ?? globalThis)
+}
+
+function headersConstructor(): typeof Headers {
+  const windowRef = webWindow() as (Window & { Headers?: typeof Headers }) | undefined
+  const HeadersCtor = (globalThis as typeof globalThis & { Headers?: typeof Headers }).Headers
+    ?? windowRef?.Headers
+  if (!HeadersCtor) {
+    throw new Error('Headers is not available in this runtime.')
+  }
+  return HeadersCtor
+}
+
+function formDataConstructor(): typeof FormData | undefined {
+  const windowRef = webWindow() as (Window & { FormData?: typeof FormData }) | undefined
+  return (globalThis as typeof globalThis & { FormData?: typeof FormData }).FormData
+    ?? windowRef?.FormData
+}
+
+function webWindow(): Window | undefined {
+  return (globalThis as typeof globalThis & { window?: Window }).window
 }

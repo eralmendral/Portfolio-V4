@@ -108,8 +108,8 @@ image upload routes.
 ## Endpoints
 
 Read endpoints are public for projects, certificates, links, work experiences,
-skill categories, skills, tools, products, the products section settings, and
-intro. Public product list/detail reads return published products only;
+skill categories, skills, tools, daily progress, products, the products section
+settings, and intro. Public product list/detail reads return published products only;
 authenticated product reads can manage all statuses. All article routes plus
 create, update, delete, and upload routes require `Authorization: Bearer <jwt>`.
 
@@ -140,6 +140,12 @@ GET    /tools/{id}
 PATCH  /tools/{id}
 PUT    /tools/{id}
 DELETE /tools/{id}
+GET    /daily-progress
+POST   /daily-progress
+GET    /daily-progress/{id-or-date}
+PATCH  /daily-progress/{id-or-date}
+PUT    /daily-progress/{id-or-date}
+DELETE /daily-progress/{id-or-date}
 GET    /products/section
 PATCH  /products/section
 GET    /products

@@ -1,0 +1,227 @@
+name: deploy-production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "client/**"
+      - "server/**"
+      - "scripts/deploy-production.sh"
+      - ".github/workflows/deploy-production.yml"
+      - "deployment.md"
+  workflow_dispatch:
+    inputs:
+      deploy_scope:
+        description: "What to deploy"
+        required: true
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - client
+          - server
+          - all
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    name: Detect deploy scope
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_scope: ${{ steps.scope.outputs.deploy_scope }}
+      client_changed: ${{ steps.scope.outputs.client_changed }}
+      server_changed: ${{ steps.scope.outputs.server_changed }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine changed areas
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          requested_scope="${{ github.event.inputs.deploy_scope || 'auto' }}"
+          client_changed=false
+          server_changed=false
+
+          if [ "$requested_scope" != "auto" ]; then
+            case "$requested_scope" in
+              client)
+                client_changed=true
+                ;;
+              server)
+                server_changed=true
+                ;;
+              all)
+                client_changed=true
+                server_changed=true
+                ;;
+              *)
+                echo "Invalid deploy scope: $requested_scope" >&2
+                exit 1
+                ;;
+            esac
+          else
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              client_changed=true
+              server_changed=true
+            else
+              before="${{ github.event.before }}"
+              after="${{ github.sha }}"
+
+              if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+                changed_files="$(git diff-tree --no-commit-id --name-only -r "$after")"
+              else
+                changed_files="$(git diff --name-only "$before" "$after")"
+              fi
+
+              echo "$changed_files"
+
+              if echo "$changed_files" | grep -Eq '^(client/|scripts/deploy-production\.sh|\.github/workflows/deploy-production\.yml|deployment\.md)'; then
+                client_changed=true
+              fi
+              if echo "$changed_files" | grep -Eq '^(server/|scripts/deploy-production\.sh|\.github/workflows/deploy-production\.yml|deployment\.md)'; then
+                server_changed=true
+              fi
+            fi
+          fi
+
+          if [ "$client_changed" = "true" ] && [ "$server_changed" = "true" ]; then
+            deploy_scope=all
+          elif [ "$client_changed" = "true" ]; then
+            deploy_scope=client
+          elif [ "$server_changed" = "true" ]; then
+            deploy_scope=server
+          else
+            deploy_scope=none
+          fi
+
+          {
+            echo "client_changed=$client_changed"
+            echo "server_changed=$server_changed"
+            echo "deploy_scope=$deploy_scope"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Deploy scope: $deploy_scope"
+
+  client-check:
+    name: Client build
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.client_changed == 'true'
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build client
+        env:
+          PUBLIC_API_BASE_URL: ${{ secrets.PUBLIC_API_BASE_URL }}
+        run: |
+          test -n "$PUBLIC_API_BASE_URL"
+          npm run build
+
+  server-check:
+    name: Server tests
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.server_changed == 'true'
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "The following files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Run tests
+        run: go test ./...
+
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs:
+      - detect
+      - client-check
+      - server-check
+    if: |
+      always() &&
+      needs.detect.outputs.deploy_scope != 'none' &&
+      (needs.client-check.result == 'success' || needs.client-check.result == 'skipped') &&
+      (needs.server-check.result == 'success' || needs.server-check.result == 'skipped')
+    environment: production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        env:
+          DO_HOST: ${{ secrets.DO_HOST }}
+          DO_USER: ${{ secrets.DO_USER }}
+          DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$DO_HOST"
+          test -n "$DO_USER"
+          test -n "$DO_SSH_KEY"
+
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$DO_SSH_KEY" > "$HOME/.ssh/do_deploy_key"
+          chmod 600 "$HOME/.ssh/do_deploy_key"
+          ssh-keyscan -H "$DO_HOST" >> "$HOME/.ssh/known_hosts"
+
+      - name: Run Droplet deploy
+        shell: bash
+        env:
+          DO_HOST: ${{ secrets.DO_HOST }}
+          DO_USER: ${{ secrets.DO_USER }}
+          DEPLOY_SCOPE: ${{ needs.detect.outputs.deploy_scope }}
+          PUBLIC_API_BASE_URL: ${{ secrets.PUBLIC_API_BASE_URL }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          APP_DIR: /opt/portfolio-v4
+        run: |
+          set -euo pipefail
+
+          remote_command="$(
+            printf 'cd %q && PUBLIC_API_BASE_URL=%q FRONTEND_URL=%q ./scripts/deploy-production.sh %q' \
+              "$APP_DIR" "$PUBLIC_API_BASE_URL" "$FRONTEND_URL" "$DEPLOY_SCOPE"
+          )"
+
+          ssh -i "$HOME/.ssh/do_deploy_key" \
+            -o IdentitiesOnly=yes \
+            "$DO_USER@$DO_HOST" \
+            "$remote_command"

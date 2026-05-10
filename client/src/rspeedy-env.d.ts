@@ -4,6 +4,10 @@ interface ImportMetaEnv {
   readonly PUBLIC_API_BASE_URL?: string
 }
 
+declare global {
+  const __PUBLIC_API_BASE_URL__: string | undefined
+}
+
 declare module '@lynx-js/types' {
   interface GlobalProps {}
 }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from '@lynx-js/react'
+import type { ReactNode } from 'react'
 
 import { ApiError, createApiClient, resolveAssetUrl } from './api.js'
 import type {
@@ -317,7 +318,249 @@ const emptyIntroForm: IntroForm = {
   imageCaption: '',
 }
 
+type AppRoute = 'public' | 'admin'
+
+interface PublicData {
+  intro: Intro | null
+  projects: Project[]
+  certificates: Certificate[]
+  workExperiences: WorkExperience[]
+  links: Link[]
+  skillCategories: SkillCategory[]
+  skills: Skill[]
+  tools: Tool[]
+}
+
+const emptyPublicData: PublicData = {
+  intro: null,
+  projects: [],
+  certificates: [],
+  workExperiences: [],
+  links: [],
+  skillCategories: [],
+  skills: [],
+  tools: [],
+}
+
 export function App() {
+  const [route, setRoute] = useState<AppRoute>(readInitialRoute)
+
+  useEffect(() => {
+    const windowRef = browserWindow()
+    if (!windowRef) return
+
+    const syncRoute = () => setRoute(readInitialRoute())
+    windowRef.addEventListener?.('popstate', syncRoute)
+    return () => windowRef.removeEventListener?.('popstate', syncRoute)
+  }, [])
+
+  const navigate = useCallback((nextRoute: AppRoute) => {
+    const path = nextRoute === 'admin' ? '/login' : '/'
+    pushPath(path)
+    setRoute(nextRoute)
+  }, [])
+
+  if (route === 'admin') {
+    return <AdminApp onViewPublic={() => navigate('public')} />
+  }
+
+  return <PublicHome onAdmin={() => navigate('admin')} />
+}
+
+function PublicHome({ onAdmin }: { onAdmin: () => void }) {
+  const [data, setData] = useState<PublicData>(emptyPublicData)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const api = useMemo(() => createApiClient(() => null), [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadPublicData() {
+      setLoading(true)
+      setError('')
+      const [
+        intro,
+        projects,
+        certificates,
+        workExperiences,
+        links,
+        skillCategories,
+        skills,
+        tools,
+      ] = await Promise.all([
+        optionalResult(api.getIntro(), null),
+        optionalResult(api.listProjects({ q: '', status: 'published', featured: 'all' }), []),
+        optionalResult(api.listCertificates({ q: '', status: 'published', featured: 'all' }), []),
+        optionalResult(api.listWorkExperiences({ q: '', status: 'published', featured: 'all', current: 'all' }), []),
+        optionalResult(api.listLinks({ q: '', status: 'published', star: 'all' }), []),
+        optionalResult(api.listSkillCategories({ q: '', status: 'published' }), []),
+        optionalResult(api.listSkills({ q: '', status: 'published', featured: 'all', category_id: '', category: '' }), []),
+        optionalResult(api.listTools({ q: '', status: 'published', featured: 'all', category: '', tag: '' }), []),
+      ])
+
+      if (cancelled) return
+
+      setData({
+        intro,
+        projects,
+        certificates,
+        workExperiences,
+        links,
+        skillCategories,
+        skills,
+        tools,
+      })
+      if (!intro && projects.length === 0 && skills.length === 0 && tools.length === 0) {
+        setError('Published portfolio content is not available yet.')
+      }
+      setLoading(false)
+    }
+
+    void loadPublicData().catch(nextError => {
+      if (cancelled) return
+      setError(nextError instanceof Error ? nextError.message : 'Unable to load portfolio content.')
+      setLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [api])
+
+  const visibleProjects = [...data.projects].sort(byFeaturedThenProjectOrder).slice(0, 3)
+  const starredLinks = data.links.filter(link => link.star).slice(0, 4)
+  const skillGroups = data.skillCategories
+    .map(category => ({
+      category,
+      skills: data.skills
+        .filter(skill => skill.category_id === category.id)
+        .sort(byFeaturedThenOrder),
+    }))
+    .filter(group => group.skills.length > 0)
+    .slice(0, 5)
+  const toolGroups = groupByCategory(data.tools).slice(0, 5)
+
+  return (
+    <scroll-view className='PublicPage' scroll-y>
+      <view className='PublicNav'>
+        <text className='PublicBrand'>Eric Almendral</text>
+        <view className='PublicNavActions'>
+          {starredLinks.map(link => (
+            <text key={link.id} className='PublicNavLink' bindtap={() => openExternal(link.url)}>{link.label}</text>
+          ))}
+          <text className='PublicNavLink PublicNavLink--muted' bindtap={onAdmin}>Admin</text>
+        </view>
+      </view>
+
+      <view className='PublicHero'>
+        <view className='PublicHeroCopy'>
+          <text className='PublicEyebrow'>AI ENGINEER</text>
+          <text className='PublicTitle'>{data.intro?.title || 'AI Engineer'}</text>
+          <text className='PublicLead'>
+            {data.intro?.description || 'I build AI-enabled products, backend systems, and polished interfaces that turn model capabilities into reliable user workflows.'}
+          </text>
+          <view className='PublicHeroActions'>
+            {starredLinks.map(link => (
+              <TapButton key={link.id} label={link.label} onTap={() => openExternal(link.url)} variant='primary' />
+            ))}
+          </view>
+        </view>
+        <view className='PublicPortraitWrap'>
+          {canRenderPublicImage(data.intro?.profile_picture?.url) ? (
+            <image src={resolveAssetUrl(data.intro!.profile_picture!.url)} className='PublicPortrait' />
+          ) : (
+            <view className='PublicPortraitFallback'>
+              <text className='PublicPortraitInitials'>EA</text>
+            </view>
+          )}
+        </view>
+      </view>
+
+      {loading ? <StateBlock title='Loading portfolio...' /> : null}
+      {error ? <view className='PublicNotice'><text className='MutedText'>{error}</text></view> : null}
+
+      <view className='PublicStats'>
+        <PublicStat value={data.projects.length} label='Projects' />
+        <PublicStat value={data.skills.length} label='Skills' />
+        <PublicStat value={data.tools.length} label='Tools' />
+        <PublicStat value={data.workExperiences.length} label='Experience' />
+      </view>
+
+      <PublicSection title='Selected Work' subtitle='Featured shipped systems and product-facing engineering.'>
+        <view className='PublicCardGrid'>
+          {visibleProjects.map(project => <ProjectCard key={project.id} project={project} />)}
+          {!loading && visibleProjects.length === 0 ? <StateBlock title='No published projects yet.' compact /> : null}
+        </view>
+      </PublicSection>
+
+      <PublicSection title='Skills' subtitle='Grouped by capability so recruiters can scan the strongest fit quickly.'>
+        <view className='PublicSkillGrid'>
+          {skillGroups.map(group => (
+            <view key={group.category.id} className='PublicPanel'>
+              <text className='PublicPanelTitle'>{group.category.name}</text>
+              <text className='PublicPanelText'>{group.category.description || 'Focused engineering capability.'}</text>
+              <view className='TagRow'>
+                {group.skills.slice(0, 8).map(skill => (
+                  <text key={skill.id} className={skill.featured ? 'PublicPill PublicPill--featured' : 'PublicPill'}>{skill.name}</text>
+                ))}
+              </view>
+            </view>
+          ))}
+          {!loading && skillGroups.length === 0 ? <StateBlock title='No published skills yet.' compact /> : null}
+        </view>
+      </PublicSection>
+
+      <PublicSection title='Tools' subtitle='The software and platforms used for implementation, testing, and delivery.'>
+        <view className='PublicToolGrid'>
+          {toolGroups.map(group => (
+            <view key={group.category} className='PublicPanel'>
+              <text className='PublicPanelTitle'>{group.category}</text>
+              <view className='TagRow'>
+                {group.items.slice(0, 10).map(tool => (
+                  <text key={tool.id} className={tool.featured ? 'PublicPill PublicPill--featured' : 'PublicPill'}>{tool.name}</text>
+                ))}
+              </view>
+            </view>
+          ))}
+          {!loading && toolGroups.length === 0 ? <StateBlock title='No published tools yet.' compact /> : null}
+        </view>
+      </PublicSection>
+
+      <PublicSection title='Experience' subtitle='Recent work focused on backend APIs, AI workflows, and production delivery.'>
+        <view className='PublicTimeline'>
+          {data.workExperiences.slice(0, 4).map(experience => (
+            <view key={experience.id} className='PublicTimelineItem'>
+              <text className='PublicPanelTitle'>{experience.title}</text>
+              <text className='PublicPanelMeta'>{experience.company} - {dateRange(experience.started_at, experience.ended_at, experience.current)}</text>
+              <text className='PublicPanelText'>{experience.summary || experience.description || 'Engineering delivery role.'}</text>
+              <view className='TagRow'>
+                {(experience.skills ?? experience.tech_stack ?? []).slice(0, 5).map(item => <text key={item} className='PublicPill'>{item}</text>)}
+              </view>
+            </view>
+          ))}
+          {!loading && data.workExperiences.length === 0 ? <StateBlock title='No published experience yet.' compact /> : null}
+        </view>
+      </PublicSection>
+
+      {data.certificates.length > 0 ? (
+        <PublicSection title='Proof Points' subtitle='Certifications that support the portfolio.'>
+          <view className='PublicCardGrid'>
+            {data.certificates.slice(0, 2).map(certificate => (
+              <view key={certificate.id} className='PublicPanel'>
+                <text className='PublicPanelTitle'>{certificate.title}</text>
+                <text className='PublicPanelMeta'>{certificate.issuer}</text>
+                <text className='PublicPanelText'>{certificate.summary || certificate.description || 'Published credential.'}</text>
+              </view>
+            ))}
+          </view>
+        </PublicSection>
+      ) : null}
+    </scroll-view>
+  )
+}
+
+function AdminApp({ onViewPublic }: { onViewPublic: () => void }) {
   const [token, setTokenState] = useState(readToken)
   const [loginUsername, setLoginUsername] = useState('admin')
   const [loginPassword, setLoginPassword] = useState('')
@@ -819,6 +1062,7 @@ export function App() {
           </view>
           {error ? <ErrorPanel error={error} fields={fieldErrors} /> : null}
           <TapButton label={operation === 'saving' ? 'Signing in...' : 'Sign in'} onTap={onLogin} variant='primary' disabled={operation !== 'idle'} />
+          <TapButton label='View public profile' onTap={onViewPublic} variant='ghost' />
         </view>
       </view>
     )
@@ -833,6 +1077,7 @@ export function App() {
         </view>
         <view className='TopActions'>
           <text className='MutedText'>{operation === 'idle' ? 'Ready' : operation}</text>
+          <TapButton label='View public' onTap={onViewPublic} variant='secondary' />
           <TapButton label='Log out' onTap={onLogout} variant='ghost' />
         </view>
       </view>
@@ -972,6 +1217,51 @@ export function App() {
             />
           ) : null}
         </scroll-view>
+      </view>
+    </view>
+  )
+}
+
+function PublicStat({ value, label }: { value: number, label: string }) {
+  return (
+    <view className='PublicStat'>
+      <text className='PublicStatValue'>{String(value)}</text>
+      <text className='PublicStatLabel'>{label}</text>
+    </view>
+  )
+}
+
+function PublicSection({ title, subtitle, children }: { title: string, subtitle: string, children: ReactNode }) {
+  return (
+    <view className='PublicSection'>
+      <view className='PublicSectionHeader'>
+        <text className='PublicSectionTitle'>{title}</text>
+        <text className='PublicSectionSubtitle'>{subtitle}</text>
+      </view>
+      {children}
+    </view>
+  )
+}
+
+function ProjectCard({ project }: { project: Project }) {
+  return (
+    <view className='PublicProjectCard' bindtap={() => openExternal(project.demo_url || project.github_url || '')}>
+      {canRenderPublicImage(project.main_image?.url) ? (
+        <image src={resolveAssetUrl(project.main_image!.url)} className='PublicProjectImage' />
+      ) : (
+        <view className='PublicProjectImage PublicProjectImage--empty'>
+          <text className='PublicProjectInitial'>{project.title.slice(0, 1).toUpperCase()}</text>
+        </view>
+      )}
+      <view className='PublicProjectBody'>
+        <view className='RecordHeader'>
+          <text className='PublicPanelTitle'>{project.title}</text>
+          {project.featured ? <text className='PublicPill PublicPill--featured'>Featured</text> : null}
+        </view>
+        <text className='PublicPanelText'>{project.summary || project.description || 'Published project.'}</text>
+        <view className='TagRow'>
+          {(project.tech_stack ?? project.tags ?? []).slice(0, 5).map(item => <text key={item} className='PublicPill'>{item}</text>)}
+        </view>
       </view>
     </view>
   )
@@ -1832,6 +2122,113 @@ function formatBytes(value?: number): string {
   if (value < 1024) return `${value} B`
   if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`
   return `${Math.round(value / 1024 / 1024)} MB`
+}
+
+async function optionalResult<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await promise
+  } catch {
+    return fallback
+  }
+}
+
+function byFeaturedThenOrder<T extends { featured: boolean, sort_order: number, name: string }>(first: T, second: T): number {
+  if (first.featured !== second.featured) {
+    return first.featured ? -1 : 1
+  }
+  return first.sort_order - second.sort_order || first.name.localeCompare(second.name)
+}
+
+function byFeaturedThenProjectOrder(first: Project, second: Project): number {
+  if (first.featured !== second.featured) {
+    return first.featured ? -1 : 1
+  }
+  return first.sort_order - second.sort_order || first.title.localeCompare(second.title)
+}
+
+function groupByCategory(tools: Tool[]): Array<{ category: string, items: Tool[] }> {
+  const groups = new Map<string, Tool[]>()
+  for (const tool of tools) {
+    const category = tool.category || 'Tools'
+    const items = groups.get(category) ?? []
+    items.push(tool)
+    groups.set(category, items)
+  }
+
+  return Array.from(groups.entries())
+    .map(([category, items]) => ({ category, items: items.sort(byFeaturedThenOrder) }))
+    .sort((first, second) => first.category.localeCompare(second.category))
+}
+
+function dateRange(startedAt?: string, endedAt?: string, current?: boolean): string {
+  const start = dateOnly(startedAt)
+  if (current) {
+    return start ? `${start} - Present` : 'Current'
+  }
+  const end = dateOnly(endedAt)
+  if (start && end) return `${start} - ${end}`
+  if (start) return start
+  return 'Published role'
+}
+
+function readInitialRoute(): AppRoute {
+  const windowRef = browserWindow()
+  if (!windowRef) return 'public'
+
+  const url = new URL(windowRef.location.href)
+  if (url.searchParams.get('route') === 'admin') {
+    return 'admin'
+  }
+
+  const pathname = windowRef.location.pathname.replace(/\/+$/, '') || '/'
+  return pathname === '/login' || pathname === '/admin' ? 'admin' : 'public'
+}
+
+function pushPath(path: '/' | '/login') {
+  const windowRef = browserWindow()
+  if (!windowRef) return
+
+  let nextPath = path
+  if (windowRef.location.pathname.includes('__web_preview')) {
+    const url = new URL(windowRef.location.href)
+    if (path === '/login') {
+      url.searchParams.set('route', 'admin')
+    } else {
+      url.searchParams.delete('route')
+    }
+    nextPath = `${url.pathname}${url.search}${url.hash}` as '/' | '/login'
+  }
+
+  windowRef.history?.pushState?.(null, '', nextPath)
+}
+
+function browserWindow(): Window | undefined {
+  return (globalThis as typeof globalThis & { window?: Window }).window
+}
+
+function openExternal(url: string): void {
+  const trimmed = url.trim()
+  if (!trimmed) return
+
+  const windowRef = browserWindow()
+  if (windowRef?.open) {
+    windowRef.open(trimmed, '_blank', 'noopener,noreferrer')
+    return
+  }
+  if (windowRef?.location) {
+    windowRef.location.href = trimmed
+  }
+}
+
+function canRenderPublicImage(url?: string): boolean {
+  if (!url) return false
+  if (url.startsWith('data:')) return true
+  if (!/^https?:\/\//i.test(url)) {
+    return false
+  }
+
+  const windowRef = browserWindow()
+  return !!windowRef && url.startsWith(windowRef.location.origin)
 }
 
 function confirmAction(message: string): boolean {

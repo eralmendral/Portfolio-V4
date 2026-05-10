@@ -474,6 +474,268 @@ view {
   background: #ffffff;
 }
 
+.PublicPage {
+  height: 100vh;
+  width: 100vw;
+  overflow-y: auto;
+  background: #f7f8f5;
+}
+
+.PublicNav {
+  min-height: 64px;
+  padding: 16px 28px;
+  border-bottom: 1px solid #dfe3df;
+  background: rgba(247, 248, 245, 0.96);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.PublicBrand {
+  color: #14201d;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.PublicNavActions,
+.PublicHeroActions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.PublicNavLink {
+  color: #1d594d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.PublicNavLink--muted {
+  color: #6b746f;
+}
+
+.PublicHero {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 28px 36px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  align-items: center;
+  gap: 40px;
+}
+
+.PublicHeroCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.PublicEyebrow {
+  color: #b24d2d;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.PublicTitle {
+  color: #14201d;
+  font-size: 56px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.PublicLead {
+  color: #41504b;
+  max-width: 680px;
+  font-size: 20px;
+  line-height: 1.45;
+}
+
+.PublicPortraitWrap {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #dde8df;
+  border: 1px solid #d0d8d2;
+}
+
+.PublicPortrait,
+.PublicPortraitFallback {
+  width: 100%;
+  height: 100%;
+}
+
+.PublicPortraitFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #dce8e2;
+}
+
+.PublicPortraitInitials {
+  color: #1d594d;
+  font-size: 64px;
+  font-weight: 900;
+}
+
+.PublicStats {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 28px 24px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.PublicStat,
+.PublicNotice {
+  border: 1px solid #dfe3df;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.PublicNotice {
+  max-width: 1180px;
+  margin: 0 auto 18px;
+}
+
+.PublicStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.PublicStatValue {
+  color: #14201d;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.PublicStatLabel {
+  color: #66736e;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.PublicSection {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 34px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.PublicSectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.PublicSectionTitle {
+  color: #14201d;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.PublicSectionSubtitle,
+.PublicPanelText,
+.PublicPanelMeta {
+  color: #56645f;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.PublicCardGrid,
+.PublicSkillGrid,
+.PublicToolGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.PublicSkillGrid,
+.PublicToolGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.PublicProjectCard,
+.PublicPanel,
+.PublicTimelineItem {
+  border: 1px solid #dfe3df;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.PublicProjectBody,
+.PublicPanel,
+.PublicTimelineItem {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.PublicProjectImage {
+  width: 100%;
+  height: 190px;
+}
+
+.PublicProjectImage--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e7ece8;
+}
+
+.PublicProjectInitial {
+  color: #1d594d;
+  font-size: 42px;
+  font-weight: 900;
+}
+
+.PublicPanelTitle {
+  color: #17211f;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.PublicPanelMeta {
+  color: #b24d2d;
+  font-weight: 800;
+}
+
+.PublicPill {
+  border-radius: 999px;
+  border: 1px solid #d5ddd7;
+  padding: 5px 9px;
+  background: #f7f8f5;
+  color: #495752;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.PublicPill--featured {
+  border-color: #8bc5b6;
+  background: #e8f5f0;
+  color: #15594c;
+}
+
+.PublicTimeline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
 @media (max-width: 860px) {
   .TopBar,
   .Toolbar,
@@ -509,5 +771,33 @@ view {
 
   .ToolbarSpacer {
     display: none;
+  }
+
+  .PublicNav,
+  .PublicHero {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .PublicHero {
+    padding-top: 34px;
+  }
+
+  .PublicTitle {
+    font-size: 38px;
+  }
+
+  .PublicLead {
+    font-size: 17px;
+  }
+
+  .PublicStats,
+  .PublicCardGrid,
+  .PublicSkillGrid,
+  .PublicToolGrid,
+  .PublicTimeline {
+    display: flex;
+    flex-direction: column;
   }
 }

@@ -21,7 +21,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-const maxSampleRecords = 3
+const maxSampleRecords = 6
 
 func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -715,6 +715,54 @@ func sampleTools() []tools.Tool {
 				"coding",
 			},
 			SortOrder: 30,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-google-cloud-platform",
+			Name:      "Google Cloud Platform",
+			Category:  "Cloud & DevOps",
+			Summary:   "Cloud platform for deploying, operating, and scaling production services.",
+			IconClass: "lucide-cloud",
+			Tags: []string{
+				"cloud",
+				"gcp",
+				"deployment",
+			},
+			SortOrder: 40,
+			Featured:  true,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-google-artifact-registry",
+			Name:      "Google Artifact Registry",
+			Category:  "Cloud & DevOps",
+			Summary:   "Managed registry for storing and distributing container images and build artifacts.",
+			IconClass: "lucide-package",
+			Tags: []string{
+				"registry",
+				"containers",
+				"gcp",
+			},
+			SortOrder: 50,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-github-container-registry",
+			Name:      "GitHub Container Registry",
+			Category:  "Cloud & DevOps",
+			Summary:   "Container registry for publishing release images directly from GitHub Actions.",
+			IconClass: "lucide-box",
+			Tags: []string{
+				"registry",
+				"containers",
+				"ghcr",
+			},
+			SortOrder: 60,
 			Featured:  false,
 			Status:    tools.StatusPublished,
 			CreatedAt: createdAt,
