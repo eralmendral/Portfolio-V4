@@ -21,6 +21,7 @@ import (
 	"github.com/eralme/server/internal/music"
 	"github.com/eralme/server/internal/products"
 	"github.com/eralme/server/internal/projects"
+	"github.com/eralme/server/internal/series"
 	"github.com/eralme/server/internal/skills"
 	"github.com/eralme/server/internal/tools"
 	"github.com/eralme/server/internal/workexperience"
@@ -101,6 +102,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	seriesStore, err := series.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	dailyProgressStore, err := dailyprogress.NewPostgresStore(startupCtx, db)
 	if err != nil {
 		log.Fatal(err)
@@ -116,7 +122,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	router, err := buildRouter(cfg, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, musicStore, dailyProgressStore, productStore, introStore)
+	router, err := buildRouter(cfg, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, musicStore, seriesStore, dailyProgressStore, productStore, introStore)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -133,7 +139,7 @@ func main() {
 	}
 }
 
-func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, musicStore music.Store, dailyProgressStore dailyprogress.Store, productStore products.Store, introStore intro.Store) (http.Handler, error) {
+func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, musicStore music.Store, seriesStore series.Store, dailyProgressStore dailyprogress.Store, productStore products.Store, introStore intro.Store) (http.Handler, error) {
 	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTIssuer, cfg.TokenTTL)
 
 	assetStore, err := uploadStore(cfg)
@@ -155,6 +161,7 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	skillHandler := skills.NewHandler(skillStore)
 	toolHandler := tools.NewHandler(toolStore)
 	musicHandler := music.NewHandler(musicStore)
+	seriesHandler := series.NewHandler(seriesStore)
 	dailyProgressHandler := dailyprogress.NewHandler(dailyProgressStore)
 	productHandler := products.NewHandler(productStore)
 	introHandler := intro.NewHandler(introStore, intro.UploadConfig{
@@ -226,6 +233,12 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	mux.Handle("PATCH /music/", requireJWT(http.HandlerFunc(musicHandler.HandleItem)))
 	mux.Handle("PUT /music/", requireJWT(http.HandlerFunc(musicHandler.HandleItem)))
 	mux.Handle("DELETE /music/", requireJWT(http.HandlerFunc(musicHandler.HandleItem)))
+	mux.Handle("GET /series", http.HandlerFunc(seriesHandler.HandleCollection))
+	mux.Handle("POST /series", requireJWT(http.HandlerFunc(seriesHandler.HandleCollection)))
+	mux.Handle("GET /series/", http.HandlerFunc(seriesHandler.HandleItem))
+	mux.Handle("PATCH /series/", requireJWT(http.HandlerFunc(seriesHandler.HandleItem)))
+	mux.Handle("PUT /series/", requireJWT(http.HandlerFunc(seriesHandler.HandleItem)))
+	mux.Handle("DELETE /series/", requireJWT(http.HandlerFunc(seriesHandler.HandleItem)))
 	mux.Handle("GET /daily-progress", http.HandlerFunc(dailyProgressHandler.HandleCollection))
 	mux.Handle("POST /daily-progress", requireJWT(http.HandlerFunc(dailyProgressHandler.HandleCollection)))
 	mux.Handle("GET /daily-progress/", http.HandlerFunc(dailyProgressHandler.HandleItem))

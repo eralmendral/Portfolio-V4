@@ -16,6 +16,7 @@ import (
 	"github.com/eralme/server/internal/music"
 	"github.com/eralme/server/internal/products"
 	"github.com/eralme/server/internal/projects"
+	"github.com/eralme/server/internal/series"
 	"github.com/eralme/server/internal/skills"
 	"github.com/eralme/server/internal/tools"
 	"github.com/eralme/server/internal/workexperience"
@@ -74,6 +75,10 @@ func main() {
 	musicStore, err := music.NewPostgresStore(ctx, db)
 	if err != nil {
 		log.Fatalf("migrate music postgres: %v", err)
+	}
+	seriesStore, err := series.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate series postgres: %v", err)
 	}
 	productStore, err := products.NewPostgresStore(ctx, db)
 	if err != nil {
@@ -197,6 +202,17 @@ func main() {
 		}
 	}
 
+	seriesSamples := sampleSeries()
+	validateSampleLimit("series", len(seriesSamples))
+	for _, entry := range seriesSamples {
+		if err := deleteSeriesIfExists(ctx, seriesStore, entry.ID); err != nil {
+			log.Fatalf("delete series sample %q: %v", entry.ID, err)
+		}
+		if _, err := seriesStore.Create(ctx, entry); err != nil {
+			log.Fatalf("create series sample %q: %v", entry.ID, err)
+		}
+	}
+
 	productSamples := sampleProducts()
 	validateSampleLimit("products", len(productSamples))
 	for _, product := range productSamples {
@@ -224,7 +240,7 @@ func main() {
 		log.Fatalf("save intro sample: %v", err)
 	}
 
-	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample music entries, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(musicSamples), len(productSamples))
+	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample music entries, %d sample series entries, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(musicSamples), len(seriesSamples), len(productSamples))
 }
 
 func validateSampleLimit(name string, count int) {
@@ -300,6 +316,14 @@ func deleteToolIfExists(ctx context.Context, store tools.Store, id string) error
 func deleteMusicIfExists(ctx context.Context, store music.Store, id string) error {
 	err := store.Delete(ctx, id)
 	if errors.Is(err, music.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteSeriesIfExists(ctx context.Context, store series.Store, id string) error {
+	err := store.Delete(ctx, id)
+	if errors.Is(err, series.ErrNotFound) {
 		return nil
 	}
 	return err
@@ -834,6 +858,52 @@ func sampleMusic() []music.Music {
 			SortOrder:        30,
 			Status:           music.StatusPublished,
 			CreatedAt:        createdAt,
+		},
+	}
+}
+
+func sampleSeries() []series.Series {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []series.Series{
+		{
+			ID:              "sample-series-the-long-room",
+			Title:           "The Long Room",
+			Category:        series.CategoryTVSeries,
+			Creator:         "North Studio",
+			Platform:        "StreamBox",
+			WatchURL:        "https://example.com/series/the-long-room",
+			MostlyWatchedOn: "2026-05-10",
+			Notes:           "A quiet favorite about work, friendship, and ordinary courage.",
+			SortOrder:       10,
+			Status:          series.StatusPublished,
+			CreatedAt:       createdAt,
+		},
+		{
+			ID:              "sample-series-moon-harbor",
+			Title:           "Moon Harbor",
+			Category:        series.CategoryAnime,
+			Creator:         "Blue House",
+			Platform:        "Crunchyroll",
+			WatchURL:        "https://example.com/series/moon-harbor",
+			MostlyWatchedOn: "2026-05-09",
+			Notes:           "Soft science fiction with a patient emotional center.",
+			SortOrder:       20,
+			Status:          series.StatusPublished,
+			CreatedAt:       createdAt,
+		},
+		{
+			ID:              "sample-series-home-signals",
+			Title:           "Home Signals",
+			Category:        series.CategoryTVSeries,
+			Creator:         "City Room",
+			Platform:        "StreamBox",
+			WatchURL:        "https://example.com/series/home-signals",
+			MostlyWatchedOn: "2026-05-08",
+			Notes:           "A comfort watch about chosen family and showing up.",
+			SortOrder:       30,
+			Status:          series.StatusPublished,
+			CreatedAt:       createdAt,
 		},
 	}
 }

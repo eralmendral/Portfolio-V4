@@ -39,7 +39,7 @@ docker compose up --build
 The API listens on `http://localhost:8080`, and PostgreSQL is exposed on
 `localhost:5433` by default to avoid conflicts with a local Postgres instance.
 Set `POSTGRES_HOST_PORT=5432` if you want Compose to bind host port `5432`.
-Project, certificate, article, work experience, skill, link, tool, music, product, and intro
+Project, certificate, article, work experience, skill, link, tool, music, series, product, and intro
 rows are stored in the `postgres-data` Docker volume. Uploaded local files are
 stored in the `uploads` Docker volume.
 
@@ -58,7 +58,7 @@ defaults, and runs `go run .`. It uses `POSTGRES_HOST_PORT=5433` and
 ## Sample Data
 
 Seed sample projects, certificates, articles, work experiences, skills, links,
-tools, music, products, and intro content into the local PostgreSQL database:
+tools, music, series, products, and intro content into the local PostgreSQL database:
 
 ```sh
 ./scripts/seed-sample-data.sh
@@ -67,17 +67,17 @@ tools, music, products, and intro content into the local PostgreSQL database:
 The seed command replaces only the sample rows by their stable IDs/slugs,
 sample article IDs, sample work experience IDs/slugs, sample skill
 IDs/categories, sample link IDs, sample tool IDs, sample product IDs/slugs, the
-sample music IDs, sample product IDs/slugs, the products section settings row,
-and the singleton intro row. It does not wipe
+sample music IDs, sample series IDs, sample product IDs/slugs, the products
+section settings row, and the singleton intro row. It does not wipe
 other projects, certificates, articles, work experiences, skills, links, tools,
-music, or products. Each seeded collection is capped by the seed command's
+music, series, or products. Each seeded collection is capped by the seed command's
 sample limit.
 
 ## Postman
 
 Import `postman/portfolio-server.postman_collection.json` into Postman. Run the
 `Auth / Login` request first; it stores the JWT in the collection variables for
-the protected project, certificate, article, skill, link, tool, music, product, and intro
+the protected project, certificate, article, skill, link, tool, music, series, product, and intro
 requests.
 
 Local development uploads use server disk by default:
@@ -110,7 +110,7 @@ image upload routes.
 ## Endpoints
 
 Read endpoints are public for projects, certificates, links, work experiences,
-skill categories, skills, tools, music, daily progress, products, the products section
+skill categories, skills, tools, music, series, daily progress, products, the products section
 settings, and intro. Public product list/detail reads return published products only;
 authenticated product reads can manage all statuses. All article routes plus
 create, update, delete, and upload routes require `Authorization: Bearer <jwt>`.
@@ -148,6 +148,12 @@ GET    /music/{id}
 PATCH  /music/{id}
 PUT    /music/{id}
 DELETE /music/{id}
+GET    /series
+POST   /series
+GET    /series/{id}
+PATCH  /series/{id}
+PUT    /series/{id}
+DELETE /series/{id}
 GET    /daily-progress
 POST   /daily-progress
 GET    /daily-progress/{id-or-date}

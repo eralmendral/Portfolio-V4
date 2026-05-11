@@ -2326,6 +2326,221 @@
       ]
     },
     {
+      "name": "Series",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Series",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/series",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "series"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{series_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "{{series_category}}",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{series_search}}",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "{{series_from}}",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "{{series_to}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Series",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"series created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"series_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Long Room\",\n  \"category\": \"tv_series\",\n  \"creator\": \"North Studio\",\n  \"platform\": \"StreamBox\",\n  \"watch_url\": \"https://example.com/series/the-long-room\",\n  \"mostly_watched_on\": \"2026-05-10\",\n  \"notes\": \"A quiet favorite about work, friendship, and ordinary courage.\",\n  \"sort_order\": 10,\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/series",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "series"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Series by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/series/{{series_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "series",
+                "{{series_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Series",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Updated from Postman.\",\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/series/{{series_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "series",
+                "{{series_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Series",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Long Room\",\n  \"category\": \"tv_series\",\n  \"creator\": \"North Studio\",\n  \"platform\": \"StreamBox\",\n  \"watch_url\": \"https://example.com/series/the-long-room\",\n  \"mostly_watched_on\": \"2026-05-10\",\n  \"notes\": \"Replaced from Postman.\",\n  \"sort_order\": 10,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/series/{{series_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "series",
+                "{{series_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Series",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/series/{{series_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "series",
+                "{{series_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Products",
       "auth": {
         "type": "bearer",
@@ -3002,6 +3217,30 @@
     },
     {
       "key": "music_to",
+      "value": "2026-05-31"
+    },
+    {
+      "key": "series_id",
+      "value": ""
+    },
+    {
+      "key": "series_status",
+      "value": "draft"
+    },
+    {
+      "key": "series_category",
+      "value": "tv_series"
+    },
+    {
+      "key": "series_search",
+      "value": "room"
+    },
+    {
+      "key": "series_from",
+      "value": "2026-05-01"
+    },
+    {
+      "key": "series_to",
       "value": "2026-05-31"
     },
     {
