@@ -1123,6 +1123,242 @@
       ]
     },
     {
+      "name": "Work Experiences",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Work Experiences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/work-experiences",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "work-experiences"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{work_experience_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "featured",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "current",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{work_experience_search}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Work Experience",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"work experience created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"work_experience_id\", body.id);",
+                  "}",
+                  "if (body.slug) {",
+                  "  pm.collectionVariables.set(\"work_experience_slug\", body.slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior Software Engineer\",\n  \"company\": \"Arete Labs\",\n  \"company_url\": \"https://example.com\",\n  \"company_logo_url\": \"https://example.com/logos/arete-labs.svg\",\n  \"employment_type\": \"Full-time\",\n  \"location\": \"Remote\",\n  \"location_type\": \"Remote\",\n  \"summary\": \"Built portfolio-grade API and product systems across Go services.\",\n  \"description\": \"Use this request to create a current work experience through the API.\",\n  \"highlights\": [\n    \"Led API platform improvements\",\n    \"Improved delivery quality with focused testing\"\n  ],\n  \"responsibilities\": [\n    \"Designed and maintained Go HTTP APIs\",\n    \"Collaborated on product planning and delivery\"\n  ],\n  \"tech_stack\": [\n    \"Go\",\n    \"PostgreSQL\",\n    \"Docker\"\n  ],\n  \"skills\": [\n    \"Backend Engineering\",\n    \"API Design\",\n    \"Testing\"\n  ],\n  \"started_at\": \"2024-01-01T00:00:00Z\",\n  \"ended_at\": null,\n  \"current\": true,\n  \"featured\": true,\n  \"sort_order\": 10,\n  \"status\": \"draft\",\n  \"published_at\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/work-experiences",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "work-experiences"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Work Experience by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/work-experiences/{{work_experience_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "work-experiences",
+                "{{work_experience_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Work Experience by Slug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/work-experiences/{{work_experience_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "work-experiences",
+                "{{work_experience_slug}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Work Experience",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Updated from Postman.\",\n  \"featured\": false,\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/work-experiences/{{work_experience_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "work-experiences",
+                "{{work_experience_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Work Experience",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slug\": \"{{work_experience_slug}}\",\n  \"title\": \"Senior Software Engineer\",\n  \"company\": \"Arete Labs\",\n  \"company_url\": \"https://example.com\",\n  \"company_logo_url\": \"https://example.com/logos/arete-labs.svg\",\n  \"employment_type\": \"Full-time\",\n  \"location\": \"San Francisco, CA\",\n  \"location_type\": \"Hybrid\",\n  \"summary\": \"Replaced from Postman.\",\n  \"description\": \"Use this request to replace editable work experience fields through the API.\",\n  \"highlights\": [\n    \"Delivered reliable Go services\",\n    \"Partnered across product and engineering\"\n  ],\n  \"responsibilities\": [\n    \"Owned backend API design and implementation\",\n    \"Improved observability and regression coverage\"\n  ],\n  \"tech_stack\": [\n    \"Go\",\n    \"PostgreSQL\",\n    \"Docker\"\n  ],\n  \"skills\": [\n    \"Backend Engineering\",\n    \"Product Engineering\",\n    \"Testing\"\n  ],\n  \"started_at\": \"2024-01-01T00:00:00Z\",\n  \"ended_at\": \"2025-12-31T00:00:00Z\",\n  \"current\": false,\n  \"featured\": true,\n  \"sort_order\": 10,\n  \"status\": \"published\",\n  \"published_at\": \"2026-05-01T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/work-experiences/{{work_experience_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "work-experiences",
+                "{{work_experience_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Work Experience",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/work-experiences/{{work_experience_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "work-experiences",
+                "{{work_experience_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Certificate Images",
       "auth": {
         "type": "bearer",
@@ -1880,6 +2116,216 @@
       ]
     },
     {
+      "name": "Music",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Music",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/music",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "music"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{music_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{music_search}}",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "{{music_from}}",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "{{music_to}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Music",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"music created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"music_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Night Drive\",\n  \"artist\": \"Aster\",\n  \"album\": \"Road Notes\",\n  \"spotify_url\": \"https://open.spotify.com/track/sample-night-drive\",\n  \"youtube_url\": \"https://www.youtube.com/watch?v=sample-night-drive\",\n  \"mostly_listened_on\": \"2026-05-10\",\n  \"notes\": \"A late-night focus track for settling into deep work.\",\n  \"sort_order\": 10,\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/music",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "music"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Music by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/music/{{music_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "music",
+                "{{music_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Music",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Updated from Postman.\",\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/music/{{music_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "music",
+                "{{music_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Music",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Night Drive\",\n  \"artist\": \"Aster\",\n  \"album\": \"Road Notes\",\n  \"spotify_url\": \"https://open.spotify.com/track/sample-night-drive\",\n  \"youtube_url\": \"https://www.youtube.com/watch?v=sample-night-drive\",\n  \"mostly_listened_on\": \"2026-05-10\",\n  \"notes\": \"Replaced from Postman.\",\n  \"sort_order\": 10,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/music/{{music_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "music",
+                "{{music_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Music",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/music/{{music_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "music",
+                "{{music_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Products",
       "auth": {
         "type": "bearer",
@@ -2475,6 +2921,22 @@
       "value": "portfolio"
     },
     {
+      "key": "work_experience_id",
+      "value": ""
+    },
+    {
+      "key": "work_experience_slug",
+      "value": "arete-labs-senior-software-engineer"
+    },
+    {
+      "key": "work_experience_status",
+      "value": "draft"
+    },
+    {
+      "key": "work_experience_search",
+      "value": "go"
+    },
+    {
       "key": "skill_category_id",
       "value": ""
     },
@@ -2521,6 +2983,26 @@
     {
       "key": "tool_search",
       "value": "codex"
+    },
+    {
+      "key": "music_id",
+      "value": ""
+    },
+    {
+      "key": "music_status",
+      "value": "draft"
+    },
+    {
+      "key": "music_search",
+      "value": "night"
+    },
+    {
+      "key": "music_from",
+      "value": "2026-05-01"
+    },
+    {
+      "key": "music_to",
+      "value": "2026-05-31"
     },
     {
       "key": "product_id",

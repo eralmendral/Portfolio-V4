@@ -13,6 +13,7 @@ import (
 	"github.com/eralme/server/internal/certificates"
 	"github.com/eralme/server/internal/intro"
 	"github.com/eralme/server/internal/links"
+	"github.com/eralme/server/internal/music"
 	"github.com/eralme/server/internal/products"
 	"github.com/eralme/server/internal/projects"
 	"github.com/eralme/server/internal/skills"
@@ -69,6 +70,10 @@ func main() {
 	toolStore, err := tools.NewPostgresStore(ctx, db)
 	if err != nil {
 		log.Fatalf("migrate tools postgres: %v", err)
+	}
+	musicStore, err := music.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate music postgres: %v", err)
 	}
 	productStore, err := products.NewPostgresStore(ctx, db)
 	if err != nil {
@@ -181,6 +186,17 @@ func main() {
 		}
 	}
 
+	musicSamples := sampleMusic()
+	validateSampleLimit("music", len(musicSamples))
+	for _, entry := range musicSamples {
+		if err := deleteMusicIfExists(ctx, musicStore, entry.ID); err != nil {
+			log.Fatalf("delete music sample %q: %v", entry.ID, err)
+		}
+		if _, err := musicStore.Create(ctx, entry); err != nil {
+			log.Fatalf("create music sample %q: %v", entry.ID, err)
+		}
+	}
+
 	productSamples := sampleProducts()
 	validateSampleLimit("products", len(productSamples))
 	for _, product := range productSamples {
@@ -208,7 +224,7 @@ func main() {
 		log.Fatalf("save intro sample: %v", err)
 	}
 
-	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(productSamples))
+	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample music entries, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(musicSamples), len(productSamples))
 }
 
 func validateSampleLimit(name string, count int) {
@@ -276,6 +292,14 @@ func deleteLinkIfExists(ctx context.Context, store links.Store, id string) error
 func deleteToolIfExists(ctx context.Context, store tools.Store, id string) error {
 	err := store.Delete(ctx, id)
 	if errors.Is(err, tools.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteMusicIfExists(ctx context.Context, store music.Store, id string) error {
+	err := store.Delete(ctx, id)
+	if errors.Is(err, music.ErrNotFound) {
 		return nil
 	}
 	return err
@@ -766,6 +790,50 @@ func sampleTools() []tools.Tool {
 			Featured:  false,
 			Status:    tools.StatusPublished,
 			CreatedAt: createdAt,
+		},
+	}
+}
+
+func sampleMusic() []music.Music {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []music.Music{
+		{
+			ID:               "sample-music-night-drive",
+			Title:            "Night Drive",
+			Artist:           "Aster",
+			Album:            "Road Notes",
+			SpotifyURL:       "https://open.spotify.com/track/sample-night-drive",
+			YouTubeURL:       "https://www.youtube.com/watch?v=sample-night-drive",
+			MostlyListenedOn: "2026-05-10",
+			Notes:            "A late-night focus track for settling into deep work without losing warmth.",
+			SortOrder:        10,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
+		},
+		{
+			ID:               "sample-music-morning-signal",
+			Title:            "Morning Signal",
+			Artist:           "Beacon",
+			Album:            "Light Map",
+			SpotifyURL:       "https://open.spotify.com/track/sample-morning-signal",
+			MostlyListenedOn: "2026-05-09",
+			Notes:            "The kind of song that makes ordinary routines feel intentional.",
+			SortOrder:        20,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
+		},
+		{
+			ID:               "sample-music-quiet-loop",
+			Title:            "Quiet Loop",
+			Artist:           "Harbor",
+			Album:            "Still Water",
+			YouTubeURL:       "https://www.youtube.com/watch?v=sample-quiet-loop",
+			MostlyListenedOn: "2026-05-08",
+			Notes:            "A calm repeat listen for thinking through hard problems.",
+			SortOrder:        30,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
 		},
 	}
 }
