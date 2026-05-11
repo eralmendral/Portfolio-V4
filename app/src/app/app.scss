@@ -9,16 +9,19 @@
   --app-heading: #0a0a0a;
   --app-copy: #3f3f3f;
   --app-muted: #5a5a5a;
-  --app-logo-filter: grayscale(1) contrast(1.04);
+  --app-logo-filter: none;
   --app-toggle-bg: rgba(255, 255, 255, 0.86);
   --app-toggle-border: rgba(18, 18, 18, 0.14);
   --app-toggle-track: #ece7dc;
   --app-toggle-option: #6b665b;
   --app-toggle-thumb: #ffffff;
-  --app-toggle-thumb-color: #8a5a00;
-  --app-toggle-focus: #1f7a6f;
+  --app-toggle-thumb-color: #f97316;
+  --app-toggle-focus: #0a0a0a;
   display: block;
+  width: 100%;
+  height: 100dvh;
   min-height: 100dvh;
+  overflow: hidden;
   color-scheme: light;
 }
 
@@ -31,123 +34,25 @@
   --app-heading: #f7f3ea;
   --app-copy: #d7d2c8;
   --app-muted: #aaa594;
-  --app-logo-filter: brightness(1.08) contrast(1.02);
+  --app-logo-filter: invert(1) brightness(1.12);
   --app-toggle-bg: rgba(23, 24, 21, 0.88);
   --app-toggle-border: rgba(247, 243, 234, 0.18);
   --app-toggle-track: #222821;
   --app-toggle-option: #aaa594;
   --app-toggle-thumb: #f7f3ea;
-  --app-toggle-thumb-color: #263b72;
-  --app-toggle-focus: #e4b44c;
+  --app-toggle-thumb-color: #38bdf8;
+  --app-toggle-focus: #f7f3ea;
   color-scheme: dark;
 }
 
 .AppShell {
+  width: 100%;
+  height: 100dvh;
   min-height: 100dvh;
+  overflow: hidden;
   background:
     linear-gradient(180deg, var(--app-page-wash-start), var(--app-page-wash-end)),
     var(--app-page-bg);
   color: var(--app-heading);
   transition: background-color 180ms ease;
-}
-
-.ThemeToggle {
-  position: fixed;
-  inset-block-start: 20px;
-  inset-inline-end: 20px;
-  z-index: 20;
-  width: 76px;
-  height: 42px;
-  border: 1px solid var(--app-toggle-border);
-  border-radius: 999px;
-  background: var(--app-toggle-bg);
-  color: var(--app-toggle-option);
-  display: grid;
-  place-items: center;
-  padding: 5px;
-  cursor: pointer;
-  box-shadow: 0 16px 40px rgba($color-black, 0.16), $shadow-hairline;
-  backdrop-filter: blur(18px);
-  transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    color 180ms ease,
-    transform 160ms ease;
-}
-
-.ThemeToggle:hover {
-  transform: translateY(-1px);
-}
-
-.ThemeToggle:active {
-  transform: translateY(0);
-}
-
-.ThemeToggle:focus-visible {
-  outline: 3px solid var(--app-toggle-focus);
-  outline-offset: 3px;
-}
-
-.ThemeToggleTrack {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--app-toggle-track);
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  align-items: center;
-  overflow: hidden;
-}
-
-.ThemeToggleOption,
-.ThemeToggleThumb {
-  display: grid;
-  place-items: center;
-}
-
-.ThemeToggleOption {
-  position: relative;
-  z-index: 1;
-  opacity: 0.74;
-}
-
-.ThemeToggleThumb {
-  position: absolute;
-  inset-block-start: 4px;
-  inset-inline-start: 4px;
-  z-index: 2;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--app-toggle-thumb);
-  color: var(--app-toggle-thumb-color);
-  box-shadow: 0 8px 18px rgba($color-black, 0.2);
-  transition:
-    color 180ms ease,
-    background-color 180ms ease,
-    transform 180ms ease;
-}
-
-.ThemeToggleDark .ThemeToggleThumb {
-  transform: translateX(34px);
-}
-
-.ScreenReaderOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-@media (max-width: 720px) {
-  .ThemeToggle {
-    inset-block-start: 16px;
-    inset-inline-end: 16px;
-  }
 }

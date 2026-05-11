@@ -15,6 +15,7 @@ import (
 	"github.com/eralme/server/internal/articles"
 	"github.com/eralme/server/internal/auth"
 	"github.com/eralme/server/internal/certificates"
+	"github.com/eralme/server/internal/contact"
 	"github.com/eralme/server/internal/dailyprogress"
 	"github.com/eralme/server/internal/games"
 	"github.com/eralme/server/internal/intro"
@@ -127,8 +128,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	contactStore, err := contact.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	router, err := buildRouter(cfg, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, musicStore, seriesStore, gameStore, dailyProgressStore, productStore, introStore)
+	router, err := buildRouter(cfg, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, musicStore, seriesStore, gameStore, dailyProgressStore, productStore, introStore, contactStore)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -145,7 +150,7 @@ func main() {
 	}
 }
 
-func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, musicStore music.Store, seriesStore series.Store, gameStore games.Store, dailyProgressStore dailyprogress.Store, productStore products.Store, introStore intro.Store) (http.Handler, error) {
+func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, musicStore music.Store, seriesStore series.Store, gameStore games.Store, dailyProgressStore dailyprogress.Store, productStore products.Store, introStore intro.Store, contactStore contact.Store) (http.Handler, error) {
 	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTIssuer, cfg.TokenTTL)
 
 	assetStore, err := uploadStore(cfg)
@@ -175,6 +180,7 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 		Store:    assetStore,
 		MaxBytes: cfg.MaxUploadBytes,
 	})
+	contactHandler := contact.NewHandler(contactStore)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -272,6 +278,10 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	mux.Handle("DELETE /intro", requireJWT(http.HandlerFunc(introHandler.Handle)))
 	mux.Handle("POST /intro/profile-picture", requireJWT(http.HandlerFunc(introHandler.HandleProfilePicture)))
 	mux.Handle("DELETE /intro/profile-picture", requireJWT(http.HandlerFunc(introHandler.HandleProfilePicture)))
+	mux.Handle("GET /contact-profile", http.HandlerFunc(contactHandler.HandleProfile))
+	mux.Handle("PATCH /contact-profile", requireJWT(http.HandlerFunc(contactHandler.HandleProfile)))
+	mux.Handle("PUT /contact-profile", requireJWT(http.HandlerFunc(contactHandler.HandleProfile)))
+	mux.Handle("POST /contact-submissions", http.HandlerFunc(contactHandler.HandleCollection))
 
 	if cfg.UploadStorage == "local" && cfg.UploadDir != "" {
 		mux.Handle("/uploads/projects/", http.StripPrefix("/uploads/projects/", http.FileServer(http.Dir(cfg.UploadDir))))

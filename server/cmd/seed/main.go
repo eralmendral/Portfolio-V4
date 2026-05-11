@@ -11,6 +11,7 @@ import (
 
 	"github.com/eralme/server/internal/articles"
 	"github.com/eralme/server/internal/certificates"
+	"github.com/eralme/server/internal/contact"
 	"github.com/eralme/server/internal/games"
 	"github.com/eralme/server/internal/intro"
 	"github.com/eralme/server/internal/links"
@@ -92,6 +93,10 @@ func main() {
 	introStore, err := intro.NewPostgresStore(ctx, db)
 	if err != nil {
 		log.Fatalf("migrate intro postgres: %v", err)
+	}
+	contactStore, err := contact.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate contact postgres: %v", err)
 	}
 
 	projectSamples := sampleProjects()
@@ -256,7 +261,12 @@ func main() {
 		log.Fatalf("save intro sample: %v", err)
 	}
 
-	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample music entries, %d sample series entries, %d sample games, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(musicSamples), len(seriesSamples), len(gameSamples), len(productSamples))
+	contactProfileSample := sampleContactProfile()
+	if _, err := contactStore.SaveProfile(ctx, contactProfileSample); err != nil {
+		log.Fatalf("save contact profile sample: %v", err)
+	}
+
+	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample music entries, %d sample series entries, %d sample games, %d sample products, products section, intro, and contact profile\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(musicSamples), len(seriesSamples), len(gameSamples), len(productSamples))
 }
 
 func validateSampleLimit(name string, count int) {
@@ -722,7 +732,7 @@ func sampleLinks() []links.Link {
 			URL:       "https://www.linkedin.com/in/eralmendral",
 			IconClass: "hugeicons-pro:linkedin-01",
 			SortOrder: 20,
-			Star:      true,
+			Star:      false,
 			Status:    links.StatusPublished,
 			CreatedAt: createdAt,
 		},
@@ -883,6 +893,30 @@ func sampleMusic() []music.Music {
 			Status:           music.StatusPublished,
 			CreatedAt:        createdAt,
 		},
+		{
+			ID:               "sample-music-silver-room",
+			Title:            "Silver Room",
+			Artist:           "Kin",
+			Album:            "Interior Weather",
+			SpotifyURL:       "https://open.spotify.com/track/sample-silver-room",
+			MostlyListenedOn: "2026-05-07",
+			Notes:            "A steady listen for design passes and late review sessions.",
+			SortOrder:        40,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
+		},
+		{
+			ID:               "sample-music-last-train-home",
+			Title:            "Last Train Home",
+			Artist:           "Northline",
+			Album:            "Signals",
+			YouTubeURL:       "https://www.youtube.com/watch?v=sample-last-train-home",
+			MostlyListenedOn: "2026-05-06",
+			Notes:            "A clean closer for winding down after a focused build.",
+			SortOrder:        50,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
+		},
 	}
 }
 
@@ -1013,15 +1047,26 @@ func sampleIntro() intro.Intro {
 
 	return intro.Intro{
 		ID:          intro.DefaultID,
-		Title:       "AI Engineer",
-		Description: "I build AI-enabled products, backend systems, and polished interfaces that turn model capabilities into reliable user workflows.",
+		Title:       "Software | AI - Engineer",
+		Description: "I turn rough ideas into AI-powered products people can actually use: sharp interfaces, sturdy APIs, and workflows that hold up beyond the demo.",
 		ProfilePicture: &intro.IntroImage{
 			ID:         "sample-intro-profile-picture",
 			URL:        "https://picsum.photos/seed/ai-engineer-profile/1200/1200",
-			AltText:    "AI Engineer profile portrait",
-			Caption:    "AI Engineer profile picture",
+			AltText:    "Eric Almendral portrait for an AI engineering portfolio",
+			Caption:    "Eric Almendral, AI engineer",
 			UploadedAt: createdAt,
 		},
 		CreatedAt: createdAt,
+	}
+}
+
+func sampleContactProfile() contact.Profile {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return contact.Profile{
+		ID:          contact.DefaultProfileID,
+		WorkEmail:   "work@eralmendral.dev",
+		PhoneNumber: "+1 (555) 010-2026",
+		CreatedAt:   createdAt,
 	}
 }

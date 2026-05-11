@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -8,7 +8,7 @@ export type ThemeMode = 'light' | 'dark';
 })
 export class ThemeService {
   private readonly document = inject(DOCUMENT);
-  private readonly themeStorageKey = 'portfolio-theme';
+  private readonly themeStorageKey = 'eric-almendral-theme';
 
   readonly mode = signal<ThemeMode>(this.getInitialThemeMode());
   readonly isDarkMode = computed(() => this.mode() === 'dark');
@@ -18,11 +18,18 @@ export class ThemeService {
   readonly activeLabel = computed(() =>
     this.isDarkMode() ? 'Dark mode' : 'Light mode',
   );
-  readonly logoPath = computed(() =>
+  readonly logoPath = computed(() => '/assets/avatar/eric-almendral-mark-light-transparent-square.png');
+  readonly faviconPath = computed(() =>
     this.isDarkMode()
-      ? 'assets/avatar/eric-almendral-full-light-transparent.png'
-      : 'assets/avatar/eric-almendral-full-dark-transparent.png',
+      ? '/assets/avatar/eric-almendral-mark-dark-transparent-square.png'
+      : '/assets/avatar/eric-almendral-mark-light-transparent-square.png',
   );
+
+  constructor() {
+    effect(() => {
+      this.updateFavicon(this.faviconPath());
+    });
+  }
 
   toggle(): void {
     const nextMode = this.isDarkMode() ? 'light' : 'dark';
@@ -60,5 +67,20 @@ export class ThemeService {
     } catch {
       // Browsers can block storage in private or restricted contexts.
     }
+  }
+
+  private updateFavicon(path: string): void {
+    const head = this.document.head;
+    let icon = this.document.querySelector<HTMLLinkElement>("link[rel='icon']");
+
+    if (!icon) {
+      icon = this.document.createElement('link');
+      icon.rel = 'icon';
+      head.appendChild(icon);
+    }
+
+    icon.id = 'app-favicon';
+    icon.type = 'image/png';
+    icon.href = path;
   }
 }

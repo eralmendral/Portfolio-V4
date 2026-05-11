@@ -1,20 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HugeiconsIconComponent } from '@hugeicons/angular';
-import type { IconSvgObject } from '@hugeicons/angular';
-import {
-  BrainCogIcon,
-  Certificate02Icon,
-  CodeFolderIcon,
-  ToolsIcon,
-  WorkHistoryIcon,
-} from '@hugeicons-pro/core-stroke-rounded';
 
-interface SectionPageData {
-  title: string;
-  summary: string;
-  icon: IconSvgObject;
-}
+import { readPageData } from '../../data/section-page.data';
 
 @Component({
   selector: 'app-section-page',
@@ -27,12 +15,22 @@ interface SectionPageData {
           <hugeicons-icon
             [icon]="page().icon"
             [size]="42"
-            [strokeWidth]="1.7"
+            color="currentColor"
+            [strokeWidth]="2.2"
           />
         </span>
-        <p class="Eyebrow">Portfolio detail</p>
+        <p class="Eyebrow">Detail</p>
         <h1 id="section-title">{{ page().title }}</h1>
         <p>{{ page().summary }}</p>
+        @if (page().links?.length) {
+          <nav class="SectionLinks" aria-label="Section links">
+            @for (link of page().links ?? []; track link.url) {
+              <a [href]="link.url" target="_blank" rel="noreferrer">
+                {{ link.label }}
+              </a>
+            }
+          </nav>
+        }
       </section>
     </main>
   `,
@@ -77,6 +75,12 @@ interface SectionPageData {
       place-items: center;
     }
 
+    hugeicons-icon {
+      display: inline-grid;
+      color: currentColor;
+      line-height: 0;
+    }
+
     .Eyebrow {
       margin: 0;
       color: var(--app-muted);
@@ -102,6 +106,29 @@ interface SectionPageData {
       line-height: 1.55;
     }
 
+    .SectionLinks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+    }
+
+    .SectionLinks a {
+      color: var(--app-heading);
+      font-size: 16px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .SectionLinks a:hover {
+      text-decoration: underline;
+      text-underline-offset: 5px;
+    }
+
+    .SectionLinks a:focus-visible {
+      outline: 3px solid var(--app-toggle-focus);
+      outline-offset: 4px;
+    }
+
     @media (max-width: 720px) {
       .SectionPage {
         padding: 92px 20px 56px;
@@ -117,50 +144,4 @@ interface SectionPageData {
 export class SectionPageComponent {
   private readonly route = inject(ActivatedRoute);
   protected readonly page = signal(readPageData(this.route.snapshot.data));
-}
-
-export const projectsPageData: SectionPageData = {
-  title: 'Projects',
-  summary: 'A deeper archive for selected builds, production systems, experiments, and implementation notes.',
-  icon: CodeFolderIcon,
-};
-
-export const workHistoryPageData: SectionPageData = {
-  title: 'Work history',
-  summary: 'A focused timeline of roles, responsibilities, outcomes, and the operating contexts behind the work.',
-  icon: WorkHistoryIcon,
-};
-
-export const certificatesPageData: SectionPageData = {
-  title: 'Certificates',
-  summary: 'Credential details, issuing organizations, dates, and related proof links.',
-  icon: Certificate02Icon,
-};
-
-export const skillsPageData: SectionPageData = {
-  title: 'Skills',
-  summary: 'A structured view of engineering strengths across backend, frontend, delivery, quality, and AI workflows.',
-  icon: BrainCogIcon,
-};
-
-export const toolsPageData: SectionPageData = {
-  title: 'Tools',
-  summary: 'A practical inventory of the platforms, developer tools, and AI systems used to ship work.',
-  icon: ToolsIcon,
-};
-
-function readPageData(data: Record<string, unknown>): SectionPageData {
-  const title = data['title'];
-  const summary = data['summary'];
-  const icon = data['icon'];
-
-  if (typeof title === 'string' && typeof summary === 'string' && Array.isArray(icon)) {
-    return {
-      title,
-      summary,
-      icon: icon as IconSvgObject,
-    };
-  }
-
-  return projectsPageData;
 }
