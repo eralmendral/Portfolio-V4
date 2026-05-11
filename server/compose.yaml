@@ -12,6 +12,7 @@ services:
       JWT_SECRET: "${JWT_SECRET:-development-secret-change-me}"
       JWT_ISSUER: "${JWT_ISSUER:-portfolio-server}"
       TOKEN_TTL: "${TOKEN_TTL:-24h}"
+      CLIENT_ORIGINS: "${CLIENT_ORIGINS:-http://localhost:4200,http://127.0.0.1:4200}"
       UPLOAD_STORAGE: "${UPLOAD_STORAGE:-local}"
       UPLOAD_DIR: "/app/public/uploads/projects"
       UPLOAD_BASE_URL: "/uploads/projects"

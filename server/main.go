@@ -48,7 +48,7 @@ type config struct {
 	AdminUsername  string
 	AdminPassword  string
 	MaxUploadBytes int64
-	ClientOrigin   string
+	ClientOrigins  []string
 }
 
 func main() {
@@ -277,7 +277,7 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 		mux.Handle("/uploads/projects/", http.StripPrefix("/uploads/projects/", http.FileServer(http.Dir(cfg.UploadDir))))
 	}
 
-	return withCommonHeaders(mux, cfg.ClientOrigin), nil
+	return withCommonHeaders(mux, cfg.ClientOrigins), nil
 }
 
 func openDatabase(ctx context.Context, databaseURL string) (*sql.DB, error) {
@@ -323,7 +323,7 @@ func loadConfig() config {
 		AdminUsername:  os.Getenv("ADMIN_USERNAME"),
 		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
 		MaxUploadBytes: int64FromEnv("MAX_UPLOAD_BYTES", 300<<20),
-		ClientOrigin:   os.Getenv("CLIENT_ORIGIN"),
+		ClientOrigins:  clientOriginsFromEnv(),
 	}
 }
 
@@ -350,13 +350,22 @@ func uploadStore(cfg config) (projects.AssetStore, error) {
 	}
 }
 
-func withCommonHeaders(next http.Handler, clientOrigin string) http.Handler {
+func withCommonHeaders(next http.Handler, clientOrigins []string) http.Handler {
+	allowedOrigins := make(map[string]struct{}, len(clientOrigins))
+	for _, origin := range clientOrigins {
+		if normalized := normalizeOrigin(origin); normalized != "" {
+			allowedOrigins[normalized] = struct{}{}
+		}
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		if clientOrigin != "" && r.Header.Get("Origin") == clientOrigin {
-			w.Header().Set("Access-Control-Allow-Origin", clientOrigin)
+		origin := normalizeOrigin(r.Header.Get("Origin"))
+		if _, ok := allowedOrigins[origin]; ok {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept")
+			w.Header().Set("Access-Control-Max-Age", "600")
 			w.Header().Set("Vary", "Origin")
 			if r.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusNoContent)
@@ -365,6 +374,30 @@ func withCommonHeaders(next http.Handler, clientOrigin string) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func clientOriginsFromEnv() []string {
+	values := []string{os.Getenv("CLIENT_ORIGINS"), os.Getenv("CLIENT_ORIGIN")}
+	origins := make([]string, 0, 2)
+	seen := make(map[string]struct{})
+	for _, value := range values {
+		for _, origin := range strings.Split(value, ",") {
+			normalized := normalizeOrigin(origin)
+			if normalized == "" {
+				continue
+			}
+			if _, ok := seen[normalized]; ok {
+				continue
+			}
+			seen[normalized] = struct{}{}
+			origins = append(origins, normalized)
+		}
+	}
+	return origins
+}
+
+func normalizeOrigin(origin string) string {
+	return strings.TrimRight(strings.TrimSpace(origin), "/")
 }
 
 func getenv(key string, fallback string) string {

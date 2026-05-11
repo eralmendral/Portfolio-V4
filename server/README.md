@@ -25,8 +25,10 @@ For the local Angular web admin app, allow browser requests from the Angular
 dev server:
 
 ```sh
-CLIENT_ORIGIN=http://localhost:4200
+CLIENT_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 ```
+
+`CLIENT_ORIGIN` is still supported for a single allowed origin.
 
 ## Docker
 
@@ -53,7 +55,7 @@ Run PostgreSQL with Docker Compose and the API with Go:
 
 The script starts the Compose `postgres` service, sets local development
 defaults, and runs `go run .`. It uses `POSTGRES_HOST_PORT=5433` and
-`CLIENT_ORIGIN=http://localhost:4200` by default.
+`CLIENT_ORIGINS=http://localhost:4200,http://127.0.0.1:4200` by default.
 
 ## Sample Data
 
