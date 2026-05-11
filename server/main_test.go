@@ -10,10 +10,10 @@ func TestCommonHeadersHandlesConfiguredCORSPreflight(t *testing.T) {
 	called := false
 	handler := withCommonHeaders(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		called = true
-	}), "http://localhost:3000")
+	}), "http://localhost:4200")
 
 	request := httptest.NewRequest(http.MethodOptions, "/projects", nil)
-	request.Header.Set("Origin", "http://localhost:3000")
+	request.Header.Set("Origin", "http://localhost:4200")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)
@@ -24,8 +24,8 @@ func TestCommonHeadersHandlesConfiguredCORSPreflight(t *testing.T) {
 	if response.Code != http.StatusNoContent {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusNoContent)
 	}
-	if got := response.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:3000" {
-		t.Fatalf("allow origin = %q, want http://localhost:3000", got)
+	if got := response.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:4200" {
+		t.Fatalf("allow origin = %q, want http://localhost:4200", got)
 	}
 	if got := response.Header().Get("Access-Control-Allow-Headers"); got != "Authorization, Content-Type, Accept" {
 		t.Fatalf("allow headers = %q, want Authorization, Content-Type, Accept", got)
@@ -38,7 +38,7 @@ func TestCommonHeadersSkipsCORSWhenOriginIsNotConfigured(t *testing.T) {
 	}), "")
 
 	request := httptest.NewRequest(http.MethodOptions, "/projects", nil)
-	request.Header.Set("Origin", "http://localhost:3000")
+	request.Header.Set("Origin", "http://localhost:4200")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)

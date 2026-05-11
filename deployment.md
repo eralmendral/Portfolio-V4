@@ -3,7 +3,7 @@
 This guide deploys both parts of this repository to a DigitalOcean Droplet:
 
 - `server/`: Go API, PostgreSQL, and upload storage through Docker Compose.
-- `client/`: Rspeedy/Lynx admin frontend built to static files and served by Nginx.
+- `app/`: Angular admin frontend built to static files and served by Nginx.
 
 The examples use two hostnames:
 
@@ -110,17 +110,14 @@ docker version
 docker compose version
 ```
 
-Install Node.js 22 for the frontend build with `nvm`. This only changes the
-`deploy` user environment and does not replace a system-wide Node.js used by
-other projects:
+Install Bun for the Angular frontend build. This only changes the `deploy` user
+environment and does not replace system-wide runtimes used by other projects:
 
 ```sh
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-. "$HOME/.nvm/nvm.sh"
-nvm install 22
-nvm use 22
-node --version
-npm --version
+curl -fsSL https://bun.sh/install | bash
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+bun --version
 ```
 
 Install Go 1.25.5 if you want to run server tests or the seed command directly
@@ -268,22 +265,21 @@ Expected result: `HTTP/1.1 204 No Content`.
 
 ## 8. Build the frontend
 
-The frontend API base URL is compiled into the static build, so set it before
-building:
+Build the Angular app:
 
 ```sh
-cd /opt/portfolio-v4/client
-npm ci
-PUBLIC_API_BASE_URL=https://api.example.com npm run build
+cd /opt/portfolio-v4/app
+bun install --frozen-lockfile
+bun run build
 ```
 
-The build output is `client/dist`.
+The build output is `app/dist/app/browser`.
 
 Deploy it to Nginx's web directory:
 
 ```sh
 sudo mkdir -p /var/www/portfolio-admin
-sudo rsync -a --delete /opt/portfolio-v4/client/dist/ /var/www/portfolio-admin/
+sudo rsync -a --delete /opt/portfolio-v4/app/dist/app/browser/ /var/www/portfolio-admin/
 sudo chown -R www-data:www-data /var/www/portfolio-admin
 ```
 
@@ -400,10 +396,10 @@ Manual deploys and GitHub Actions use the same script:
 
 ```sh
 cd /opt/portfolio-v4
-PUBLIC_API_BASE_URL=https://api.example.com ./scripts/deploy-production.sh all
+./scripts/deploy-production.sh all
 ```
 
-Available scopes are `client`, `server`, `all`, and `auto`.
+Available scopes are `app`, `server`, `all`, and `auto`.
 
 From the Droplet:
 
@@ -424,10 +420,10 @@ docker compose -p portfolio-v4 --env-file server/.env.production -f server/compo
 Rebuild and redeploy the frontend:
 
 ```sh
-cd /opt/portfolio-v4/client
-npm ci
-PUBLIC_API_BASE_URL=https://api.example.com npm run build
-sudo rsync -a --delete /opt/portfolio-v4/client/dist/ /var/www/portfolio-admin/
+cd /opt/portfolio-v4/app
+bun install --frozen-lockfile
+bun run build
+sudo rsync -a --delete /opt/portfolio-v4/app/dist/app/browser/ /var/www/portfolio-admin/
 sudo chown -R www-data:www-data /var/www/portfolio-admin
 sudo systemctl reload nginx
 ```
@@ -455,7 +451,6 @@ Add these GitHub Actions secrets:
 DO_HOST=YOUR_DROPLET_IP_OR_HOSTNAME
 DO_USER=deploy
 DO_SSH_KEY=private SSH key allowed to log in as deploy
-PUBLIC_API_BASE_URL=https://api.example.com
 FRONTEND_URL=https://admin.example.com
 ```
 
@@ -471,7 +466,7 @@ chmod 600 ~/.ssh/authorized_keys
 
 The workflow deploys only what changed:
 
-- `client/**`: build frontend, sync `client/dist` to `/var/www/portfolio-admin`,
+- `app/**`: build frontend, sync `app/dist/app/browser` to `/var/www/portfolio-admin`,
   validate and reload Nginx.
 - `server/**`: rebuild and restart only the `portfolio-v4` Compose stack.
 - both areas or deployment config: deploy both.
@@ -493,9 +488,9 @@ Check it out and redeploy:
 ```sh
 git checkout COMMIT_SHA
 docker compose -p portfolio-v4 --env-file server/.env.production -f server/compose.yaml -f server/compose.production.yaml up -d --build
-cd client
-PUBLIC_API_BASE_URL=https://api.example.com npm run build
-sudo rsync -a --delete /opt/portfolio-v4/client/dist/ /var/www/portfolio-admin/
+cd app
+bun run build
+sudo rsync -a --delete /opt/portfolio-v4/app/dist/app/browser/ /var/www/portfolio-admin/
 sudo systemctl reload nginx
 ```
 
@@ -547,9 +542,9 @@ sudo tail -f /var/log/nginx/access.log /var/log/nginx/error.log
 If the frontend cannot call the API, confirm all three values match:
 
 ```txt
-client build: PUBLIC_API_BASE_URL=https://api.example.com
 server env:   CLIENT_ORIGIN=https://admin.example.com
 browser URL:  https://admin.example.com
+API URL:      app configuration points to https://api.example.com
 ```
 
 If uploads fail through Nginx, confirm `client_max_body_size 300m;` is present

@@ -1,0 +1,20 @@
+<main class="AppRoot">
+  <section class="WelcomePanel" aria-labelledby="portfolio-title">
+    <img
+      class="BrandLogo"
+      [ngSrc]="logoPath"
+      width="730"
+      height="687"
+      alt="Eric Almendral"
+      priority
+    >
+
+    <div class="WelcomeCopy">
+      <p class="Eyebrow">Angular workspace</p>
+      <h1 id="portfolio-title">{{ title() }}</h1>
+      <p class="Lead">Manage portfolio content, media, and publishing status.</p>
+    </div>
+  </section>
+</main>
+
+<router-outlet />

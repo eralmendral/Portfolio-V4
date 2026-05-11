@@ -21,11 +21,11 @@ ADMIN_PASSWORD=change-me
 JWT_SECRET=replace-with-a-long-random-secret
 ```
 
-For the local Lynx web admin client, allow browser requests from the Rspeedy
+For the local Angular web admin app, allow browser requests from the Angular
 dev server:
 
 ```sh
-CLIENT_ORIGIN=http://localhost:3000
+CLIENT_ORIGIN=http://localhost:4200
 ```
 
 ## Docker
@@ -53,7 +53,7 @@ Run PostgreSQL with Docker Compose and the API with Go:
 
 The script starts the Compose `postgres` service, sets local development
 defaults, and runs `go run .`. It uses `POSTGRES_HOST_PORT=5433` and
-`CLIENT_ORIGIN=http://localhost:3000` by default.
+`CLIENT_ORIGIN=http://localhost:4200` by default.
 
 ## Sample Data
 
