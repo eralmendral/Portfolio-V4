@@ -1,19 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
 import type { IconSvgObject } from '@hugeicons/angular';
 import {
-  Briefcase01Icon,
-  Certificate01Icon,
-  CodeSimpleIcon,
   File01Icon,
-  Film01Icon,
-  GameController01Icon,
   GithubIcon,
   LinkSquare02Icon,
   Linkedin01Icon,
   MailAtSign01Icon,
-  MusicNote01Icon,
   NewTwitterIcon,
-  PlayListIcon,
   YoutubeIcon,
 } from '@hugeicons-pro/core-stroke-rounded';
 
@@ -21,7 +14,7 @@ import { PortfolioApi } from '../../../../core/services/portfolio-api.service';
 import type { PortfolioLink } from '../../../../core/models/portfolio.models';
 import { ThemeService } from '../../../../core/services/theme.service';
 import { HeroSectionComponent } from '../../components/hero-section/hero-section.component';
-import type { HeroLink, OverviewCard } from '../../models/home.models';
+import type { HeroLink } from '../../models/home.models';
 
 const fallbackIntro = {
   title: 'Software | AI - Engineer',
@@ -67,58 +60,7 @@ export class HomePageComponent {
     })),
   );
   protected readonly linksLoadFailed = computed(() => Boolean(this.linksResource.error()));
-  protected readonly sectionLinks: OverviewCard[] = [
-    {
-      title: 'Work history',
-      summary: 'Roles, responsibilities, and shipped outcomes across product, platform, and delivery work.',
-      route: '/work-history',
-      icon: Briefcase01Icon,
-    },
-    {
-      title: 'Certificates',
-      summary: 'Credentials and learning milestones that back up the engineering practice.',
-      route: '/certificates',
-      icon: Certificate01Icon,
-    },
-    {
-      title: 'Skills',
-      summary: 'Backend, frontend, tools, delivery, and AI workflow strengths organized for quick scanning.',
-      route: '/skills',
-      icon: CodeSimpleIcon,
-    },
-    {
-      title: 'Social Links',
-      summary: 'LinkedIn and other professional profiles.',
-      route: '/social-links',
-      icon: LinkSquare02Icon,
-    },
-  ];
-  protected readonly entertainmentToggle: OverviewCard = {
-    title: '/etc',
-    summary: 'Music, games, and anime links.',
-    route: '/etc',
-    icon: PlayListIcon,
-  };
-  protected readonly entertainmentLinks: OverviewCard[] = [
-    {
-      title: 'Music',
-      summary: 'Recently played tracks, albums, and listening notes.',
-      route: '/music',
-      icon: MusicNote01Icon,
-    },
-    {
-      title: 'Games',
-      summary: 'Games in rotation, platforms, and play notes.',
-      route: '/games',
-      icon: GameController01Icon,
-    },
-    {
-      title: 'Animes',
-      summary: 'Anime watchlist, favorites, and viewing notes.',
-      route: '/animes',
-      icon: Film01Icon,
-    },
-  ];
+
   private resolveLinkIcon(link: PortfolioLink): IconSvgObject {
     const configuredIcon = link.icon_class ? linkIconRegistry[link.icon_class.toLowerCase()] : undefined;
     if (configuredIcon) {

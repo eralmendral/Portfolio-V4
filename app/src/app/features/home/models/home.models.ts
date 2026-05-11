@@ -6,11 +6,3 @@ export interface HeroLink {
   url: string;
   icon: IconSvgObject;
 }
-
-export interface OverviewCard {
-  title: string;
-  summary: string;
-  route?: string;
-  url?: string;
-  icon: IconSvgObject;
-}

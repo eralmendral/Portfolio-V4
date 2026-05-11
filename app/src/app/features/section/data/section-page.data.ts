@@ -19,7 +19,7 @@ export const projectsPageData: SectionPageData = {
 };
 
 export const workHistoryPageData: SectionPageData = {
-  title: 'Work history',
+  title: 'Work XP',
   summary: 'A focused timeline of roles, responsibilities, outcomes, and the operating contexts behind the work.',
   icon: WorkHistoryIcon,
 };

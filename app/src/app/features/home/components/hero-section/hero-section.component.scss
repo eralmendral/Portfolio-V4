@@ -21,45 +21,6 @@
   place-items: center;
 }
 
-.LinkRail,
-.EntertainmentRail {
-  position: absolute;
-  inset-block-start: 50%;
-  z-index: 2;
-  display: grid;
-  gap: 40px;
-  transform: translateY(-50%);
-}
-
-.LinkRail {
-  inset-inline-start: clamp(14px, 2vw, 26px);
-  width: min(268px, 28vw);
-}
-
-.EntertainmentRail {
-  inset-inline-end: clamp(8px, 1vw, 14px);
-  width: min(180px, 18vw);
-}
-
-.EntertainmentTimeline {
-  justify-items: end;
-  padding-inline: 0 44px;
-  text-align: end;
-}
-
-.EntertainmentTimeline .TimelineIcon {
-  inset-inline-start: auto;
-  inset-inline-end: -42px;
-}
-
-.SectionTimeline {
-  position: relative;
-  display: grid;
-  gap: 38px;
-  padding-inline-start: 44px;
-}
-
-.TimelineLink,
 .HeroExternalLink {
   position: relative;
   min-height: 44px;
@@ -75,59 +36,8 @@
     transform 180ms ease;
 }
 
-.TimelineIcon {
-  position: absolute;
-  inset-inline-start: -42px;
-  z-index: 1;
-  width: 18px;
-  height: 18px;
-  color: var(--app-muted);
-  display: grid;
-  place-items: center;
-  transition: color 160ms ease, transform 180ms ease;
-}
-
-.TimelineIcon::after {
-  content: '';
-  position: absolute;
-  inset-inline-start: 24px;
-  width: 12px;
-  height: 1px;
-  background: var(--app-panel-border);
-}
-
-.EntertainmentTimeline .TimelineIcon::after {
-  inset-inline-start: auto;
-  inset-inline-end: 24px;
-}
-
-.EntertainmentLinks {
-  display: grid;
-  gap: 38px;
-}
-
-.EntertainmentToggle {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  text-align: inherit;
-  cursor: pointer;
-}
-
-.EntertainmentToggle[aria-expanded='true'] {
-  color: var(--app-heading);
-}
-
-.TimelineLink:hover,
-.TimelineLinkActive,
 .HeroExternalLink:hover {
   color: var(--app-heading);
-}
-
-.TimelineLink:hover .TimelineIcon,
-.TimelineLinkActive .TimelineIcon {
-  color: var(--app-heading);
-  transform: scale(1.04);
 }
 
 .HeroContent {
@@ -243,10 +153,6 @@ hugeicons-icon {
   .HeroLink {
     transition: none;
   }
-
-  .TimelineLink {
-    transition: none;
-  }
 }
 
 @media (max-width: 1020px) {
@@ -254,33 +160,8 @@ hugeicons-icon {
     padding: 78px 22px 24px;
   }
 
-  .LinkRail {
-    inset-inline-start: 14px;
-    width: 214px;
-    gap: 30px;
-  }
-
-  .EntertainmentRail {
-    inset-inline-end: 8px;
-    width: 40px;
-    gap: 30px;
-  }
-
   .HeroContent {
     gap: 18px;
-  }
-
-  .SectionTimeline {
-    gap: 30px;
-    padding-inline-start: 39px;
-  }
-
-  .EntertainmentTimeline {
-    padding-inline: 0 39px;
-  }
-
-  .EntertainmentLinks {
-    gap: 30px;
   }
 
   .HeroExternalLinks {
@@ -288,60 +169,14 @@ hugeicons-icon {
     padding-block-start: 12px;
   }
 
-  .TimelineLink {
-    min-height: 40px;
-    font-size: 16px;
-  }
-
-  .TimelineLink:hover,
-  .TimelineLinkActive,
   .HeroExternalLink:hover {
     transform: scale(1.04);
-  }
-
-  .TimelineIcon {
-    inset-inline-start: -36px;
-    width: 17px;
-    height: 17px;
-  }
-
-  .EntertainmentTimeline .TimelineIcon {
-    inset-inline-start: auto;
-    inset-inline-end: -36px;
-  }
-
-  .EntertainmentRail .RailLabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .EntertainmentRail .TimelineIcon::after {
-    display: none;
   }
 }
 
 @media (max-width: 720px) {
   .HeroSection {
     padding: 72px 16px 20px;
-  }
-
-  .LinkRail {
-    inset-inline-start: 10px;
-    width: 36px;
-    gap: 18px;
-  }
-
-  .EntertainmentRail {
-    inset-inline-end: 8px;
-    width: 36px;
-    gap: 18px;
   }
 
   .BrandLogo {
@@ -358,54 +193,9 @@ hugeicons-icon {
     font-size: 25px;
   }
 
-  .SectionTimeline {
-    gap: 22px;
-    padding-inline-start: 31px;
-  }
-
-  .EntertainmentTimeline {
-    padding-inline: 0 31px;
-  }
-
-  .EntertainmentLinks {
-    gap: 22px;
-  }
-
   .HeroExternalLinks {
     gap: 18px 24px;
     padding-block-start: 10px;
-  }
-
-  .TimelineLink {
-    min-height: 36px;
-    font-size: 14px;
-  }
-
-  .TimelineIcon {
-    inset-inline-start: -30px;
-    width: 16px;
-    height: 16px;
-  }
-
-  .EntertainmentTimeline .TimelineIcon {
-    inset-inline-start: auto;
-    inset-inline-end: -30px;
-  }
-
-  .RailLabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .TimelineIcon::after {
-    display: none;
   }
 }
 
@@ -430,10 +220,6 @@ hugeicons-icon {
 
   h1 {
     font-size: 23px;
-  }
-
-  .SectionTimeline {
-    gap: 14px;
   }
 
 }
