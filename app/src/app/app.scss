@@ -1,89 +1,153 @@
 @use '../styles/tokens' as *;
 
 :host {
+  --app-page-bg: #f7f7f7;
+  --app-page-wash-start: rgba(255, 255, 255, 0.9);
+  --app-page-wash-end: rgba(238, 238, 238, 0.76);
+  --app-panel-bg: rgba(255, 255, 255, 0.94);
+  --app-panel-border: #dedede;
+  --app-heading: #0a0a0a;
+  --app-copy: #3f3f3f;
+  --app-muted: #5a5a5a;
+  --app-logo-filter: grayscale(1) contrast(1.04);
+  --app-toggle-bg: rgba(255, 255, 255, 0.86);
+  --app-toggle-border: rgba(18, 18, 18, 0.14);
+  --app-toggle-track: #ece7dc;
+  --app-toggle-option: #6b665b;
+  --app-toggle-thumb: #ffffff;
+  --app-toggle-thumb-color: #8a5a00;
+  --app-toggle-focus: #1f7a6f;
   display: block;
   min-height: 100dvh;
+  color-scheme: light;
 }
 
-.AppRoot {
+:host([data-theme='dark']) {
+  --app-page-bg: #111210;
+  --app-page-wash-start: rgba(23, 24, 21, 0.9);
+  --app-page-wash-end: rgba(39, 44, 38, 0.72);
+  --app-panel-bg: rgba(20, 21, 18, 0.94);
+  --app-panel-border: #3b4038;
+  --app-heading: #f7f3ea;
+  --app-copy: #d7d2c8;
+  --app-muted: #aaa594;
+  --app-logo-filter: brightness(1.08) contrast(1.02);
+  --app-toggle-bg: rgba(23, 24, 21, 0.88);
+  --app-toggle-border: rgba(247, 243, 234, 0.18);
+  --app-toggle-track: #222821;
+  --app-toggle-option: #aaa594;
+  --app-toggle-thumb: #f7f3ea;
+  --app-toggle-thumb-color: #263b72;
+  --app-toggle-focus: #e4b44c;
+  color-scheme: dark;
+}
+
+.AppShell {
   min-height: 100dvh;
-  width: 100%;
+  background:
+    linear-gradient(180deg, var(--app-page-wash-start), var(--app-page-wash-end)),
+    var(--app-page-bg);
+  color: var(--app-heading);
+  transition: background-color 180ms ease;
+}
+
+.ThemeToggle {
+  position: fixed;
+  inset-block-start: 20px;
+  inset-inline-end: 20px;
+  z-index: 20;
+  width: 76px;
+  height: 42px;
+  border: 1px solid var(--app-toggle-border);
+  border-radius: 999px;
+  background: var(--app-toggle-bg);
+  color: var(--app-toggle-option);
   display: grid;
   place-items: center;
-  padding: 32px;
-  background:
-    linear-gradient(180deg, rgba($color-white, 0.9), rgba($color-gray-100, 0.76)),
-    $color-gray-050;
+  padding: 5px;
+  cursor: pointer;
+  box-shadow: 0 16px 40px rgba($color-black, 0.16), $shadow-hairline;
+  backdrop-filter: blur(18px);
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 160ms ease;
 }
 
-.WelcomePanel {
-  width: min(100%, 860px);
-  border: 1px solid $color-gray-200;
-  border-radius: $radius-md;
-  background: rgba($color-white, 0.94);
-  display: grid;
-  grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
-  align-items: center;
-  gap: 28px;
-  padding: 28px;
-  box-shadow: $shadow-panel, $shadow-hairline;
+.ThemeToggle:hover {
+  transform: translateY(-1px);
 }
 
-.BrandLogo {
+.ThemeToggle:active {
+  transform: translateY(0);
+}
+
+.ThemeToggle:focus-visible {
+  outline: 3px solid var(--app-toggle-focus);
+  outline-offset: 3px;
+}
+
+.ThemeToggleTrack {
+  position: relative;
   width: 100%;
-  height: auto;
-  display: block;
-  filter: grayscale(1) contrast(1.04);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--app-toggle-track);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-items: center;
+  overflow: hidden;
 }
 
-.WelcomeCopy {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.ThemeToggleOption,
+.ThemeToggleThumb {
+  display: grid;
+  place-items: center;
 }
 
-.Eyebrow {
-  margin: 0;
-  color: $color-gray-600;
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1.25;
-  text-transform: uppercase;
+.ThemeToggleOption {
+  position: relative;
+  z-index: 1;
+  opacity: 0.74;
 }
 
-h1 {
-  margin: 0;
-  color: $color-black;
-  font-size: 42px;
-  font-weight: 900;
-  line-height: 1.05;
+.ThemeToggleThumb {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-start: 4px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--app-toggle-thumb);
+  color: var(--app-toggle-thumb-color);
+  box-shadow: 0 8px 18px rgba($color-black, 0.2);
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
 }
 
-.Lead {
-  margin: 0;
-  max-width: 520px;
-  color: $color-gray-700;
-  font-size: 18px;
-  line-height: 1.45;
+.ThemeToggleDark .ThemeToggleThumb {
+  transform: translateX(34px);
+}
+
+.ScreenReaderOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (max-width: 720px) {
-  .AppRoot {
-    padding: 20px;
-    place-items: stretch;
-  }
-
-  .WelcomePanel {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .BrandLogo {
-    max-width: 220px;
-  }
-
-  h1 {
-    font-size: 34px;
+  .ThemeToggle {
+    inset-block-start: 16px;
+    inset-inline-end: 16px;
   }
 }

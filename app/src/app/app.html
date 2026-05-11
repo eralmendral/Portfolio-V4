@@ -1,20 +1,38 @@
-<main class="AppRoot">
-  <section class="WelcomePanel" aria-labelledby="portfolio-title">
-    <img
-      class="BrandLogo"
-      [ngSrc]="logoPath"
-      width="730"
-      height="687"
-      alt="Eric Almendral"
-      priority
-    >
+<div class="AppShell">
+  <button
+    class="ThemeToggle"
+    type="button"
+    [class.ThemeToggleDark]="theme.isDarkMode()"
+    [attr.aria-label]="theme.toggleLabel()"
+    [attr.aria-pressed]="theme.isDarkMode()"
+    [title]="theme.toggleLabel()"
+    (click)="toggleTheme()"
+  >
+    <span class="ThemeToggleTrack" aria-hidden="true">
+      <span class="ThemeToggleOption">
+        <hugeicons-icon
+          [icon]="sunIcon"
+          [size]="18"
+          [strokeWidth]="1.8"
+        />
+      </span>
+      <span class="ThemeToggleOption">
+        <hugeicons-icon
+          [icon]="moonIcon"
+          [size]="18"
+          [strokeWidth]="1.8"
+        />
+      </span>
+      <span class="ThemeToggleThumb">
+        <hugeicons-icon
+          [icon]="theme.isDarkMode() ? moonIcon : sunIcon"
+          [size]="20"
+          [strokeWidth]="1.8"
+        />
+      </span>
+    </span>
+    <span class="ScreenReaderOnly">{{ theme.activeLabel() }}</span>
+  </button>
 
-    <div class="WelcomeCopy">
-      <p class="Eyebrow">Angular workspace</p>
-      <h1 id="portfolio-title">{{ title() }}</h1>
-      <p class="Lead">Manage portfolio content, media, and publishing status.</p>
-    </div>
-  </section>
-</main>
-
-<router-outlet />
+  <router-outlet />
+</div>
