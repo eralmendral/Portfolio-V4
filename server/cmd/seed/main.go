@@ -11,6 +11,7 @@ import (
 
 	"github.com/eralme/server/internal/articles"
 	"github.com/eralme/server/internal/certificates"
+	"github.com/eralme/server/internal/games"
 	"github.com/eralme/server/internal/intro"
 	"github.com/eralme/server/internal/links"
 	"github.com/eralme/server/internal/music"
@@ -79,6 +80,10 @@ func main() {
 	seriesStore, err := series.NewPostgresStore(ctx, db)
 	if err != nil {
 		log.Fatalf("migrate series postgres: %v", err)
+	}
+	gameStore, err := games.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate games postgres: %v", err)
 	}
 	productStore, err := products.NewPostgresStore(ctx, db)
 	if err != nil {
@@ -213,6 +218,17 @@ func main() {
 		}
 	}
 
+	gameSamples := sampleGames()
+	validateSampleLimit("games", len(gameSamples))
+	for _, entry := range gameSamples {
+		if err := deleteGameIfExists(ctx, gameStore, entry.ID); err != nil {
+			log.Fatalf("delete game sample %q: %v", entry.ID, err)
+		}
+		if _, err := gameStore.Create(ctx, entry); err != nil {
+			log.Fatalf("create game sample %q: %v", entry.ID, err)
+		}
+	}
+
 	productSamples := sampleProducts()
 	validateSampleLimit("products", len(productSamples))
 	for _, product := range productSamples {
@@ -240,7 +256,7 @@ func main() {
 		log.Fatalf("save intro sample: %v", err)
 	}
 
-	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample music entries, %d sample series entries, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(musicSamples), len(seriesSamples), len(productSamples))
+	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample music entries, %d sample series entries, %d sample games, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(musicSamples), len(seriesSamples), len(gameSamples), len(productSamples))
 }
 
 func validateSampleLimit(name string, count int) {
@@ -324,6 +340,14 @@ func deleteMusicIfExists(ctx context.Context, store music.Store, id string) erro
 func deleteSeriesIfExists(ctx context.Context, store series.Store, id string) error {
 	err := store.Delete(ctx, id)
 	if errors.Is(err, series.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteGameIfExists(ctx context.Context, store games.Store, id string) error {
+	err := store.Delete(ctx, id)
+	if errors.Is(err, games.ErrNotFound) {
 		return nil
 	}
 	return err
@@ -904,6 +928,52 @@ func sampleSeries() []series.Series {
 			SortOrder:       30,
 			Status:          series.StatusPublished,
 			CreatedAt:       createdAt,
+		},
+	}
+}
+
+func sampleGames() []games.Game {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []games.Game{
+		{
+			ID:             "sample-game-starlit-roads",
+			Title:          "Starlit Roads",
+			Studio:         "North Play",
+			Platform:       "PC",
+			Genre:          "Adventure",
+			StoreURL:       "https://example.com/games/starlit-roads",
+			MostlyPlayedOn: "2026-05-10",
+			Notes:          "A wandering game for decompressing after long days.",
+			SortOrder:      10,
+			Status:         games.StatusPublished,
+			CreatedAt:      createdAt,
+		},
+		{
+			ID:             "sample-game-garden-tactics",
+			Title:          "Garden Tactics",
+			Studio:         "Green Tile",
+			Platform:       "Switch",
+			Genre:          "Strategy",
+			StoreURL:       "https://example.com/games/garden-tactics",
+			MostlyPlayedOn: "2026-05-09",
+			Notes:          "Small decisions that feel satisfying to revisit.",
+			SortOrder:      20,
+			Status:         games.StatusPublished,
+			CreatedAt:      createdAt,
+		},
+		{
+			ID:             "sample-game-kindling",
+			Title:          "Kindling",
+			Studio:         "Small Fire",
+			Platform:       "PC",
+			Genre:          "Cozy Simulation",
+			StoreURL:       "https://example.com/games/kindling",
+			MostlyPlayedOn: "2026-05-08",
+			Notes:          "A cozy reset game with patient rituals.",
+			SortOrder:      30,
+			Status:         games.StatusPublished,
+			CreatedAt:      createdAt,
 		},
 	}
 }

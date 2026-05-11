@@ -2541,6 +2541,221 @@
       ]
     },
     {
+      "name": "Games",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Games",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/games",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "games"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{game_status}}",
+                  "disabled": true
+                },
+                {
+                  "key": "platform",
+                  "value": "{{game_platform}}",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "{{game_search}}",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "{{game_from}}",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "{{game_to}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Game",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"game created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set(\"game_id\", body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Starlit Roads\",\n  \"studio\": \"North Play\",\n  \"platform\": \"PC\",\n  \"genre\": \"Adventure\",\n  \"store_url\": \"https://example.com/games/starlit-roads\",\n  \"mostly_played_on\": \"2026-05-10\",\n  \"notes\": \"A wandering game for decompressing after long days.\",\n  \"sort_order\": 10,\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/games",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "games"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Game by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/games/{{game_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "games",
+                "{{game_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Game",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Updated from Postman.\",\n  \"sort_order\": 20,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/games/{{game_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "games",
+                "{{game_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace Game",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Starlit Roads\",\n  \"studio\": \"North Play\",\n  \"platform\": \"PC\",\n  \"genre\": \"Adventure\",\n  \"store_url\": \"https://example.com/games/starlit-roads\",\n  \"mostly_played_on\": \"2026-05-10\",\n  \"notes\": \"Replaced from Postman.\",\n  \"sort_order\": 10,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/games/{{game_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "games",
+                "{{game_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Game",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/games/{{game_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "games",
+                "{{game_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Products",
       "auth": {
         "type": "bearer",
@@ -3241,6 +3456,30 @@
     },
     {
       "key": "series_to",
+      "value": "2026-05-31"
+    },
+    {
+      "key": "game_id",
+      "value": ""
+    },
+    {
+      "key": "game_status",
+      "value": "draft"
+    },
+    {
+      "key": "game_platform",
+      "value": "PC"
+    },
+    {
+      "key": "game_search",
+      "value": "starlit"
+    },
+    {
+      "key": "game_from",
+      "value": "2026-05-01"
+    },
+    {
+      "key": "game_to",
       "value": "2026-05-31"
     },
     {
