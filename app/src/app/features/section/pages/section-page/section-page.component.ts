@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HugeiconsIconComponent } from '@hugeicons/angular';
 
+import { PortfolioApi } from '../../../../core/services/portfolio-api.service';
+import type { SectionPageLink } from '../../models/section-page.models';
 import { readPageData } from '../../data/section-page.data';
 
 @Component({
@@ -22,14 +24,18 @@ import { readPageData } from '../../data/section-page.data';
         <p class="Eyebrow">Detail</p>
         <h1 id="section-title">{{ page().title }}</h1>
         <p>{{ page().summary }}</p>
-        @if (page().links?.length) {
+        @if (sectionLinks().length) {
           <nav class="SectionLinks" aria-label="Section links">
-            @for (link of page().links ?? []; track link.url) {
+            @for (link of sectionLinks(); track link.url) {
               <a [href]="link.url" target="_blank" rel="noreferrer">
                 {{ link.label }}
               </a>
             }
           </nav>
+        } @else if (socialLinksLoadFailed()) {
+          <button class="SectionRetry" type="button" (click)="socialLinksResource.reload()">
+            Reload links
+          </button>
         }
       </section>
     </main>
@@ -129,6 +135,26 @@ import { readPageData } from '../../data/section-page.data';
       outline-offset: 4px;
     }
 
+    .SectionRetry {
+      border: 0;
+      background: transparent;
+      color: var(--app-heading);
+      font: inherit;
+      font-size: 16px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .SectionRetry:hover {
+      text-decoration: underline;
+      text-underline-offset: 5px;
+    }
+
+    .SectionRetry:focus-visible {
+      outline: 3px solid var(--app-toggle-focus);
+      outline-offset: 4px;
+    }
+
     @media (max-width: 720px) {
       .SectionPage {
         padding: 92px 20px 56px;
@@ -143,5 +169,32 @@ import { readPageData } from '../../data/section-page.data';
 })
 export class SectionPageComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly portfolioApi = inject(PortfolioApi);
+  private readonly isSocialLinksPage = this.route.snapshot.routeConfig?.path === 'social-links';
+
   protected readonly page = signal(readPageData(this.route.snapshot.data));
+  protected readonly socialLinksResource = resource({
+    defaultValue: [] as SectionPageLink[],
+    loader: ({ abortSignal }) => {
+      if (!this.isSocialLinksPage) {
+        return Promise.resolve([]);
+      }
+
+      return this.portfolioApi.listPublishedLinks(abortSignal)
+        .then((links) => links.map((link) => ({
+          label: link.label,
+          url: link.url,
+        })));
+    },
+  });
+  protected readonly sectionLinks = computed<SectionPageLink[]>(() => {
+    if (!this.isSocialLinksPage) {
+      return this.page().links ?? [];
+    }
+
+    return this.socialLinksResource.value();
+  });
+  protected readonly socialLinksLoadFailed = computed(() => (
+    this.isSocialLinksPage && Boolean(this.socialLinksResource.error())
+  ));
 }
