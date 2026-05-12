@@ -1,7 +1,6 @@
 package contact
 
 import (
-	"fmt"
 	"net/mail"
 	"strings"
 )
@@ -114,8 +113,4 @@ func validateSaved(submission Submission) error {
 		return fields
 	}
 	return nil
-}
-
-func invalidField(name string, err error) error {
-	return validationError{name: fmt.Sprintf("%v", err)}
 }
