@@ -18,11 +18,15 @@ export class ThemeService {
   readonly activeLabel = computed(() =>
     this.isDarkMode() ? 'Dark mode' : 'Light mode',
   );
-  readonly logoPath = computed(() => '/assets/avatar/eric-almendral-mark-light-transparent-square.png');
+  readonly logoPath = computed(() =>
+    this.isDarkMode()
+      ? '/assets/icons-set/03-transparent/full-logo-transparent-white.png'
+      : '/assets/icons-set/03-transparent/full-logo-transparent-black.png',
+  );
   readonly faviconPath = computed(() =>
     this.isDarkMode()
-      ? '/assets/avatar/eric-almendral-mark-dark-transparent-square.png'
-      : '/assets/avatar/eric-almendral-mark-light-transparent-square.png',
+      ? '/assets/icons-set/04-favicons/favicon-transparent-32x32.png'
+      : '/assets/icons-set/04-favicons/favicon-32x32.png',
   );
 
   constructor() {

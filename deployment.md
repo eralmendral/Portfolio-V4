@@ -333,6 +333,32 @@ server {
     root /var/www/portfolio-admin;
     index index.html;
 
+    location = /manifest.webmanifest {
+        add_header Cache-Control "no-cache";
+        default_type application/manifest+json;
+        try_files $uri =404;
+    }
+
+    location = /ngsw-worker.js {
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
+    location = /ngsw.json {
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
+    location ~* \.(?:css|js|mjs|png|jpg|jpeg|gif|svg|webp|ico|woff2?)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
     location / {
         try_files $uri $uri/ /index.html;
     }
@@ -359,6 +385,9 @@ curl -I http://admin.example.com
 ```
 
 ## 10. Enable HTTPS
+
+HTTPS is required for browser installability outside `localhost`. Keep the
+frontend on HTTPS before treating the PWA checks as production-ready.
 
 Install Certbot:
 
@@ -433,8 +462,17 @@ Check the deployment:
 ```sh
 curl -i https://api.example.com/healthz
 curl -I https://admin.example.com
+curl -I https://admin.example.com/manifest.webmanifest
+curl -I https://admin.example.com/ngsw-worker.js
+curl -I https://admin.example.com/ngsw.json
 docker compose -p portfolio-v4 -f /opt/portfolio-v4/server/compose.yaml -f /opt/portfolio-v4/server/compose.production.yaml ps
 ```
+
+After frontend deploys, run Chrome or Edge installability checks against
+`https://admin.example.com`: confirm the manifest loads, the service worker is
+registered, the app can be installed, and a previously loaded app shell reloads
+while offline. API-backed public sections, contact submissions, and admin writes
+still require network in this v1 PWA baseline.
 
 ## 13. Continuous deployment
 

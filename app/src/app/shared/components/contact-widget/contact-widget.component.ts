@@ -3,8 +3,8 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { HugeiconsIconComponent } from '@hugeicons/angular';
 import {
   Cancel01Icon,
-  Chat01Icon,
   MailSend01Icon,
+  Message01Icon,
 } from '@hugeicons-pro/core-stroke-rounded';
 
 import type { ContactProfile } from '../../../core/models/contact.models';
@@ -21,7 +21,7 @@ export class ContactWidgetComponent {
   private readonly api = inject(PortfolioApi);
   private readonly formBuilder = inject(NonNullableFormBuilder);
 
-  protected readonly contactIcon = Chat01Icon;
+  protected readonly contactIcon = Message01Icon;
   protected readonly closeIcon = Cancel01Icon;
   protected readonly sendIcon = MailSend01Icon;
   protected readonly isOpen = signal(false);

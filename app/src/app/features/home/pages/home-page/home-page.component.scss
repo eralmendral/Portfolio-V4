@@ -8,3 +8,17 @@
   height: 100dvh;
   overflow: hidden;
 }
+
+@media (max-width: 720px) {
+  :host {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .PageRoot {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+}

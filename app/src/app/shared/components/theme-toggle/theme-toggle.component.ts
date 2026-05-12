@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { HugeiconsIconComponent } from '@hugeicons/angular';
 import {
-  Moon01Icon,
-  Sun01Icon,
+  Moon02Icon,
+  Sun03Icon,
 } from '@hugeicons-pro/core-stroke-rounded';
 
 import { ThemeService } from '../../../core/services/theme.service';
@@ -16,8 +16,8 @@ import { ThemeService } from '../../../core/services/theme.service';
 })
 export class ThemeToggleComponent {
   protected readonly theme = inject(ThemeService);
-  protected readonly moonIcon = Moon01Icon;
-  protected readonly sunIcon = Sun01Icon;
+  protected readonly moonIcon = Moon02Icon;
+  protected readonly sunIcon = Sun03Icon;
 
   protected toggleTheme(): void {
     this.theme.toggle();

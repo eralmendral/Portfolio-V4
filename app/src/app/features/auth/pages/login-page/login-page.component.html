@@ -1,7 +1,7 @@
 <main class="AuthPage" aria-labelledby="login-title">
   <form class="AuthForm" [formGroup]="form" (ngSubmit)="submit()">
     <p class="Eyebrow">Admin</p>
-    <h1 id="login-title">Sign in</h1>
+    <h1 id="login-title">Access</h1>
 
     <label>
       <span>Username</span>
@@ -18,7 +18,7 @@
     }
 
     <button class="SubmitButton" type="submit" [disabled]="submitting()">
-      {{ submitting() ? 'Signing in' : 'Sign in' }}
+      {{ submitting() ? 'Checking' : 'Continue' }}
     </button>
   </form>
 </main>
