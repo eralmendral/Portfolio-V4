@@ -1,8 +1,12 @@
 <div class="AppShell">
   <app-theme-toggle />
   <app-home-shortcut />
-  <app-navigation />
   <app-back-shortcut />
-  <app-contact-widget />
-  <router-outlet />
+  @if (!isMinimalLayout()) {
+    <app-navigation />
+    <app-contact-widget />
+  }
+  <div class="AppContent" [class.AppContentMinimal]="isMinimalLayout()">
+    <router-outlet />
+  </div>
 </div>

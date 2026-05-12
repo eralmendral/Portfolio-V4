@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/eralme/server/internal/articles"
@@ -25,7 +28,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-const maxSampleRecords = 6
+const maxSampleRecords = 8
 
 func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -100,7 +103,11 @@ func main() {
 	}
 
 	projectSamples := sampleProjects()
-	validateSampleLimit("projects", len(projectSamples))
+	for _, idOrSlug := range sampleProjectIDsForCleanup() {
+		if err := deleteProjectIfExists(ctx, projectStore, idOrSlug); err != nil {
+			log.Fatalf("delete sample %q: %v", idOrSlug, err)
+		}
+	}
 	for _, project := range projectSamples {
 		if err := deleteProjectIfExists(ctx, projectStore, project.ID); err != nil {
 			log.Fatalf("delete sample %q: %v", project.ID, err)
@@ -114,7 +121,11 @@ func main() {
 	}
 
 	certificateSamples := sampleCertificates()
-	validateSampleLimit("certificates", len(certificateSamples))
+	for _, idOrSlug := range sampleCertificateIDsForCleanup() {
+		if err := deleteCertificateIfExists(ctx, certificateStore, idOrSlug); err != nil {
+			log.Fatalf("delete certificate sample %q: %v", idOrSlug, err)
+		}
+	}
 	for _, certificate := range certificateSamples {
 		if err := deleteCertificateIfExists(ctx, certificateStore, certificate.ID); err != nil {
 			log.Fatalf("delete certificate sample %q: %v", certificate.ID, err)
@@ -139,7 +150,11 @@ func main() {
 	}
 
 	workExperienceSamples := sampleWorkExperiences()
-	validateSampleLimit("work experiences", len(workExperienceSamples))
+	for _, idOrSlug := range sampleWorkExperienceIDsForCleanup() {
+		if err := deleteWorkExperienceIfExists(ctx, workExperienceStore, idOrSlug); err != nil {
+			log.Fatalf("delete work experience sample %q: %v", idOrSlug, err)
+		}
+	}
 	for _, workExperience := range workExperienceSamples {
 		if err := deleteWorkExperienceIfExists(ctx, workExperienceStore, workExperience.ID); err != nil {
 			log.Fatalf("delete work experience sample %q: %v", workExperience.ID, err)
@@ -153,15 +168,23 @@ func main() {
 	}
 
 	skillSamples := sampleSkills()
-	validateSampleLimit("skills", len(skillSamples))
-	for _, skill := range skillSamples {
-		if err := deleteSkillIfExists(ctx, skillStore, skill.ID); err != nil {
-			log.Fatalf("delete skill sample %q: %v", skill.ID, err)
+	for _, id := range sampleSkillIDsForCleanup() {
+		if err := deleteSkillIfExists(ctx, skillStore, id); err != nil {
+			log.Fatalf("delete skill sample %q: %v", id, err)
 		}
 	}
 
 	skillCategorySamples := sampleSkillCategories()
-	validateSampleLimit("skill categories", len(skillCategorySamples))
+	for _, idOrSlug := range sampleSkillCategoryIDsForCleanup() {
+		if err := deleteSkillsInCategoryIfExists(ctx, skillStore, idOrSlug); err != nil {
+			log.Fatalf("delete skills in category sample %q: %v", idOrSlug, err)
+		}
+	}
+	for _, idOrSlug := range sampleSkillCategoryIDsForCleanup() {
+		if err := deleteSkillCategoryIfExists(ctx, skillStore, idOrSlug); err != nil {
+			log.Fatalf("delete skill category sample %q: %v", idOrSlug, err)
+		}
+	}
 	for _, category := range skillCategorySamples {
 		if err := deleteSkillCategoryIfExists(ctx, skillStore, category.ID); err != nil {
 			log.Fatalf("delete skill category sample %q: %v", category.ID, err)
@@ -181,10 +204,12 @@ func main() {
 
 	linkSamples := sampleLinks()
 	validateSampleLimit("links", len(linkSamples))
-	for _, link := range linkSamples {
-		if err := deleteLinkIfExists(ctx, linkStore, link.ID); err != nil {
-			log.Fatalf("delete link sample %q: %v", link.ID, err)
+	for _, id := range sampleLinkIDsForCleanup() {
+		if err := deleteLinkIfExists(ctx, linkStore, id); err != nil {
+			log.Fatalf("delete link sample %q: %v", id, err)
 		}
+	}
+	for _, link := range linkSamples {
 		if _, err := linkStore.Create(ctx, link); err != nil {
 			log.Fatalf("create link sample %q: %v", link.ID, err)
 		}
@@ -192,10 +217,12 @@ func main() {
 
 	toolSamples := sampleTools()
 	validateSampleLimit("tools", len(toolSamples))
-	for _, tool := range toolSamples {
-		if err := deleteToolIfExists(ctx, toolStore, tool.ID); err != nil {
-			log.Fatalf("delete tool sample %q: %v", tool.ID, err)
+	for _, id := range sampleToolIDsForCleanup() {
+		if err := deleteToolIfExists(ctx, toolStore, id); err != nil {
+			log.Fatalf("delete tool sample %q: %v", id, err)
 		}
+	}
+	for _, tool := range toolSamples {
 		if _, err := toolStore.Create(ctx, tool); err != nil {
 			log.Fatalf("create tool sample %q: %v", tool.ID, err)
 		}
@@ -323,6 +350,30 @@ func deleteSkillIfExists(ctx context.Context, store skills.Store, id string) err
 	return err
 }
 
+func deleteSkillsInCategoryIfExists(ctx context.Context, store skills.Store, categoryIDOrSlug string) error {
+	skillsByID, err := store.ListSkills(ctx, skills.SkillListFilter{CategoryID: categoryIDOrSlug})
+	if err != nil {
+		return err
+	}
+	skillsBySlug, err := store.ListSkills(ctx, skills.SkillListFilter{Category: categoryIDOrSlug})
+	if err != nil {
+		return err
+	}
+
+	seen := make(map[string]struct{}, len(skillsByID)+len(skillsBySlug))
+	for _, skill := range append(skillsByID, skillsBySlug...) {
+		if _, ok := seen[skill.ID]; ok {
+			continue
+		}
+		seen[skill.ID] = struct{}{}
+		if err := deleteSkillIfExists(ctx, store, skill.ID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func deleteLinkIfExists(ctx context.Context, store links.Store, id string) error {
 	err := store.Delete(ctx, id)
 	if errors.Is(err, links.ErrNotFound) {
@@ -371,148 +422,274 @@ func deleteProductIfExists(ctx context.Context, store products.Store, idOrSlug s
 	return err
 }
 
-func sampleProjects() []projects.Project {
-	firstPublishedAt := time.Date(2026, time.May, 1, 9, 0, 0, 0, time.UTC)
-	secondPublishedAt := time.Date(2026, time.May, 8, 9, 0, 0, 0, time.UTC)
-
-	return []projects.Project{
-		{
-			ID:          "sample-portfolio-api-server",
-			Slug:        "portfolio-api-server",
-			Title:       "Content API Server",
-			Summary:     "A Go API for managing projects, images, and publishing state.",
-			Description: "Backend service with JWT-protected project management, PostgreSQL storage, and local or Spaces-backed image uploads.",
-			Body:        "This sample demonstrates a production-oriented content API with persistent project records, image metadata, and Docker-based local development.",
-			TechStack: []string{
-				"Go",
-				"PostgreSQL",
-				"Docker",
-			},
-			Tags: []string{
-				"backend",
-				"api",
-				"content",
-			},
-			MainImage: &projects.ProjectImage{
-				ID:         "sample-portfolio-api-main",
-				URL:        "https://picsum.photos/seed/portfolio-api/1200/800",
-				AltText:    "Abstract server dashboard preview",
-				Caption:    "Content API server overview",
-				SortOrder:  0,
-				UploadedAt: firstPublishedAt,
-			},
-			Images: []projects.ProjectImage{
-				{
-					ID:         "sample-portfolio-api-gallery-1",
-					URL:        "https://picsum.photos/seed/portfolio-api-detail/1200/800",
-					AltText:    "Project endpoint detail preview",
-					Caption:    "Project management workflow",
-					SortOrder:  1,
-					UploadedAt: firstPublishedAt,
-				},
-			},
-			GitHubURL:   "https://github.com/eralmendral",
-			DemoURL:     "https://example.com/portfolio-api-server",
-			Featured:    true,
-			SortOrder:   10,
-			Status:      projects.StatusPublished,
-			CreatedAt:   firstPublishedAt,
-			PublishedAt: &firstPublishedAt,
-		},
-		{
-			ID:          "sample-portfolio-admin-dashboard",
-			Slug:        "portfolio-admin-dashboard",
-			Title:       "Admin Dashboard",
-			Summary:     "An admin interface concept for curating featured work and project media.",
-			Description: "Sample project data for testing list, search, update, and image-management flows in the content API.",
-			Body:        "This seeded project gives Postman and local UI tests a second realistic record with different tags, status, and metadata.",
-			TechStack: []string{
-				"React",
-				"TypeScript",
-				"Tailwind CSS",
-			},
-			Tags: []string{
-				"frontend",
-				"dashboard",
-				"admin",
-			},
-			MainImage: &projects.ProjectImage{
-				ID:         "sample-admin-dashboard-main",
-				URL:        "https://picsum.photos/seed/admin-dashboard/1200/800",
-				AltText:    "Admin dashboard project preview",
-				Caption:    "Admin dashboard",
-				SortOrder:  0,
-				UploadedAt: secondPublishedAt,
-			},
-			Images: []projects.ProjectImage{
-				{
-					ID:         "sample-admin-dashboard-gallery-1",
-					URL:        "https://picsum.photos/seed/admin-dashboard-detail/1200/800",
-					AltText:    "Dashboard detail preview",
-					Caption:    "Editing project metadata",
-					SortOrder:  1,
-					UploadedAt: secondPublishedAt,
-				},
-			},
-			GitHubURL:   "https://github.com/eralmendral",
-			DemoURL:     "https://example.com/portfolio-admin-dashboard",
-			Featured:    false,
-			SortOrder:   20,
-			Status:      projects.StatusPublished,
-			CreatedAt:   secondPublishedAt,
-			PublishedAt: &secondPublishedAt,
-		},
+func sampleProjectIDsForCleanup() []string {
+	return []string{
+		"sample-portfolio-api-server",
+		"portfolio-api-server",
+		"sample-portfolio-admin-dashboard",
+		"portfolio-admin-dashboard",
+		"migrated-project-1",
+		"migrated-project-1-latin-tienda",
+		"migrated-project-2",
+		"migrated-project-2-cyclistian-bicycle-shop",
+		"migrated-project-3",
+		"migrated-project-3-haru-queue-ordering",
+		"migrated-project-4",
+		"migrated-project-4-harux-app-ui-ux",
+		"migrated-project-5",
+		"migrated-project-5-light-of-the-world-worldwide-ministries-site",
+		"migrated-project-6",
+		"migrated-project-6-crisp-online-ordering",
+		"migrated-project-7",
+		"migrated-project-7-bootcamp-project",
+		"migrated-project-8",
+		"migrated-project-8-node-api-boilerplate",
+		"migrated-project-9",
+		"migrated-project-9-waiterpro-ordering",
+		"migrated-project-10",
+		"migrated-project-10-churchapp-mobile-ui-ux",
+		"migrated-project-11",
+		"migrated-project-11-churchadmin-dashboard-wip",
+		"migrated-project-12",
+		"migrated-project-12-impactify-internal-system-v2",
+		"migrated-project-13",
+		"migrated-project-13-jpo-contact-center-nexus",
+		"migrated-project-14",
+		"migrated-project-14-netflix-clone-next13-latest",
 	}
 }
 
-func sampleCertificates() []certificates.Certificate {
-	firstIssuedAt := time.Date(2026, time.February, 10, 9, 0, 0, 0, time.UTC)
-	secondIssuedAt := time.Date(2026, time.March, 18, 9, 0, 0, 0, time.UTC)
+func sampleProjects() []projects.Project {
+	return []projects.Project{
+		migratedProject("1", "Latin Tienda", "Ecommerce storefront for South American products, built around clean product browsing and a straightforward checkout path.", "", "", "laravel, php, node, react", "laravel, react", "/assets/migrated/projects/latintienda/homepage.png", 1, "2023-07-15 03:12:28.416392+00", false,
+			"/assets/migrated/projects/latintienda/categories.png",
+			"/assets/migrated/projects/latintienda/eletronic-products.png",
+			"/assets/migrated/projects/latintienda/login.png",
+			"/assets/migrated/projects/latintienda/product.png",
+			"/assets/migrated/projects/latintienda/products.png"),
+		migratedProject("2", "Cyclistian - Bicycle Shop", "Bike shop ecommerce experience with product discovery, order flow, and store pages for bicycles, parts, and accessories.", "", "", "", "", "/assets/migrated/projects/cyclistian/store.png", 2, "2023-07-15 03:13:18.143608+00", true,
+			"/assets/migrated/projects/cyclistian/banner.png",
+			"/assets/migrated/projects/cyclistian/orders.png",
+			"/assets/migrated/projects/cyclistian/thumbnail.png",
+			"/assets/migrated/projects/cyclistian/visitus.png"),
+		migratedProject("3", "HaruX", "Restaurant ordering PWA for table-side ordering, kitchen queue management, and admin monitoring across active tables.", "", "https://harux-queue-ordering.vercel.app/", "", "", "/assets/migrated/projects/haru-queue-ordering/user_menu.png", 3, "2023-07-15 03:14:15.678173+00", false,
+			"/assets/migrated/projects/haru-queue-ordering/admin_chickens.png",
+			"/assets/migrated/projects/haru-queue-ordering/admin_dashboard.png",
+			"/assets/migrated/projects/haru-queue-ordering/admin_order_detail.png",
+			"/assets/migrated/projects/haru-queue-ordering/admin_sauce_categories.png",
+			"/assets/migrated/projects/haru-queue-ordering/admin_sauces.png",
+			"/assets/migrated/projects/haru-queue-ordering/admin_tables.png",
+			"/assets/migrated/projects/haru-queue-ordering/login.png",
+			"/assets/migrated/projects/haru-queue-ordering/user_all_orders.png",
+			"/assets/migrated/projects/haru-queue-ordering/user_menu_2.png"),
+		migratedProject("4", "Harux App UI/UX", "Mobile ordering prototype focused on a faster menu flow, clearer order states, and practical restaurant handoff screens.", "", "https://xd.adobe.com/view/f4094e54-9e82-400b-76d9-304a562778a1-8238/", "", "", "/assets/migrated/projects/harux-app-ui-ux/1.png", 5, "2023-07-19 23:25:15.443768+00", true,
+			"/assets/migrated/projects/harux-app-ui-ux/2.png",
+			"/assets/migrated/projects/harux-app-ui-ux/3.png",
+			"/assets/migrated/projects/harux-app-ui-ux/4.png",
+			"/assets/migrated/projects/harux-app-ui-ux/5.png"),
+		migratedProject("5", "Light of the World Worldwide Ministries Site", "Church website that helps visitors find schedules, events, sermons, and contact paths that feed into internal follow-up workflows.", "", "", "", "", "/assets/migrated/projects/lowwm/Homepage.png", 7, "2023-07-19 23:25:45.796568+00", true,
+			"/assets/migrated/projects/lowwm/ContactUs.png",
+			"/assets/migrated/projects/lowwm/Events.png",
+			"/assets/migrated/projects/lowwm/Gallery.png",
+			"/assets/migrated/projects/lowwm/Schedule.png",
+			"/assets/migrated/projects/lowwm/Sermons.png"),
+		migratedProject("6", "Crisp Online Ordering", "Product work across online ordering, dashboard, and mobile surfaces for restaurant ordering operations.", "", "https://www.crispqsr.com/", "", "", "/assets/migrated/projects/crisp/crisp-site.png", 6, "2023-07-19 23:26:31.296606+00", true,
+			"/assets/migrated/projects/crisp/locations.png",
+			"/assets/migrated/projects/crisp/menu.png"),
+		migratedProject("7", "Bootcamp Project", "Car marketplace built as a bootcamp challenge, covering listings, authentication, seller contact, and agile delivery practice.", "", "", "", "", "/assets/migrated/projects/bootcamp-project/homepage.png", 4, "2023-07-19 23:27:03.271084+00", true,
+			"/assets/migrated/projects/bootcamp-project/add_car.png",
+			"/assets/migrated/projects/bootcamp-project/car_details_authed.png",
+			"/assets/migrated/projects/bootcamp-project/gtr-red-3.jpg",
+			"/assets/migrated/projects/bootcamp-project/profile_car_list.png",
+			"/assets/migrated/projects/bootcamp-project/profile.png",
+			"/assets/migrated/projects/bootcamp-project/sign_up.png",
+			"/assets/migrated/projects/bootcamp-project/update_car.png",
+			"/assets/migrated/projects/bootcamp-project/view_car_not_authed.png"),
+		migratedProject("8", "Node API Boilerplate", "Reusable Node API starter with project structure, conventions, and examples for shipping backend features faster.", "https://github.com/eralmendral1/node_api_boilerplate", "", "", "", "/assets/migrated/projects/node-api-boilerplate/Thumbnail.png", 11, "2023-07-19 23:28:28.075372+00", true,
+			"/assets/migrated/projects/node-api-boilerplate/Postman.png"),
+		migratedProject("9", "Waiterpro Ordering", "Online ordering contribution focused on restaurant ordering screens, dashboard flow, and production-facing polish.", "", "https://www.waiterpro.com/", "", "", "/assets/migrated/projects/waiterpro/site.png", 12, "2023-07-19 23:29:22.931019+00", true,
+			"/assets/migrated/projects/waiterpro/dashboard.png"),
+		migratedProject("10", "ChurchApp Mobile UI/UX", "Mobile app prototype for church workflows, reports, and member-facing screens with a simple navigation model.", "", "https://xd.adobe.com/view/c67f2f8b-ab1a-43bf-6d73-2232defea040-b04e/grid/", "", "", "/assets/migrated/projects/churchapp-mobile-ui-ux/Wireframes.png", 10, "2023-07-19 23:30:10.798262+00", true,
+			"/assets/migrated/projects/churchapp-mobile-ui-ux/Reports.png"),
+		migratedProject("11", "ChurchAdmin Dashboard (WIP)", "Admin dashboard for church operations, covering users, groups, roles, reports, training data, and CMS-to-AWS sync work.", "", "https://congregation-suite.vercel.app/dashboard/users", "", "", "/assets/migrated/projects/churchadmin/vips.png", 9, "2023-07-19 23:31:01.20104+00", true,
+			"/assets/migrated/projects/churchadmin/Architecture.png",
+			"/assets/migrated/projects/churchadmin/add_user.png",
+			"/assets/migrated/projects/churchadmin/users.png"),
+		migratedProject("12", "Impactify", "Frontend contribution to a high-volume internal platform, with attention to practical workflows and maintainable UI delivery.", "", "https://impactify.io/", "", "", "/assets/migrated/projects/impactify/impactify.png", 8, "2023-07-19 23:32:40.963587+00", false),
+		migratedProject("13", "Nexus", "Contact center platform for real-time calls, SMS, and tickets, spanning frontend, backend, server setup, and database operations.", "", "https://nexus.justpressone.com/", "", "", "/assets/migrated/projects/jpo-contact-center-nexus/nexus.png", 13, "2023-07-19 23:34:05.480017+00", false),
+		migratedProject("14", "Netflix-Clone Next13@latest", "Streaming app clone built with Next.js, Tailwind, Prisma, and MongoDB to practice full-stack product patterns.", "", "https://rt-netflix-clone.vercel.app/auth", "next13", "next13", "/assets/migrated/projects/netflix-clone/nt-netflixclone-home.png", 14, "2023-08-05 14:18:48.159811+00", true,
+			"/assets/migrated/projects/netflix-clone/nt-netflixclone-auth.png"),
+	}
+}
 
-	return []certificates.Certificate{
+func sampleCertificateIDsForCleanup() []string {
+	ids := []string{
+		"sample-go-api-certificate",
+		"go-api-certificate",
+		"sample-cloud-deployment-certificate",
+		"cloud-deployment-certificate",
+		"mangtas-full-stack-engineer-certificate",
+		"full-stack-engineer-certificate",
+		"migrated-certificate-1",
+		"introduction-to-containers",
+	}
+
+	for _, certificate := range bootdevCertificates() {
+		ids = append(ids, certificate.ID, certificate.Slug)
+	}
+
+	return ids
+}
+
+func sampleCertificates() []certificates.Certificate {
+	mangtasIssuedAt := time.Date(2023, time.November, 9, 20, 53, 0, 0, time.UTC)
+	createdAt := mustParseCSVTimestamp("2024-08-24 02:44:45.510773+00")
+	seedCertificates := []certificates.Certificate{
 		{
-			ID:            "sample-go-api-certificate",
-			Slug:          "go-api-certificate",
-			Title:         "Go API Engineering Certificate",
-			Issuer:        "Open Source Academy",
-			Summary:       "Credential for building production-grade Go HTTP APIs.",
-			Description:   "Covers PostgreSQL-backed CRUD, JWT authentication, containerized deployment, and image upload workflows.",
-			CredentialURL: "https://example.com/certificates/go-api-certificate",
+			ID:            "mangtas-full-stack-engineer-certificate",
+			Slug:          "full-stack-engineer-certificate",
+			Title:         "Full Stack Engineer Certificate",
+			Issuer:        "Mangtas",
+			Summary:       "Full Stack Engineer assessment certificate from Mangtas.",
+			Description:   "Completed the Mangtas Full Stack Engineer test.",
+			CredentialURL: "https://storage.mangtas.com/public/certificates/FS-cert-6740401-Eric-Frank_Almendral-09-11-23_20_53.pdf?%20_hsmi=215420480",
 			Image: &certificates.CertificateImage{
-				ID:         "sample-go-api-certificate-image",
-				URL:        "https://picsum.photos/seed/go-api-certificate/1200/800",
-				AltText:    "Go API Engineering Certificate preview",
-				Caption:    "Go API Engineering Certificate",
-				UploadedAt: firstIssuedAt,
+				ID:         "mangtas-full-stack-engineer-certificate-image",
+				URL:        "/assets/migrated/certificates/mangtas-full-stack-certificate.png",
+				AltText:    "Full Stack Engineer Certificate from Mangtas",
+				Caption:    "Full Stack Engineer Certificate",
+				Width:      792,
+				Height:     612,
+				UploadedAt: mangtasIssuedAt,
 			},
 			Featured:  true,
-			SortOrder: 10,
+			SortOrder: 0,
 			Status:    certificates.StatusPublished,
-			IssuedAt:  &firstIssuedAt,
-			CreatedAt: firstIssuedAt,
+			IssuedAt:  &mangtasIssuedAt,
+			CreatedAt: mangtasIssuedAt,
 		},
 		{
-			ID:            "sample-cloud-deployment-certificate",
-			Slug:          "cloud-deployment-certificate",
-			Title:         "Cloud Deployment Certificate",
-			Issuer:        "Release Labs",
-			Summary:       "Credential for Docker-based app and database deployments.",
-			Description:   "Demonstrates container orchestration, environment configuration, persistent database volumes, and operational checks.",
-			CredentialURL: "https://example.com/certificates/cloud-deployment-certificate",
+			ID:            "migrated-certificate-1",
+			Slug:          "introduction-to-containers",
+			Title:         "Introduction to Containers",
+			CredentialURL: "https://dzknfsmeybpmqbixxiva.supabase.co/storage/v1/object/public/certificates/AWS_Intro_To_Containers.pdf",
 			Image: &certificates.CertificateImage{
-				ID:         "sample-cloud-deployment-certificate-image",
-				URL:        "https://picsum.photos/seed/cloud-deployment-certificate/1200/800",
-				AltText:    "Cloud Deployment Certificate preview",
-				Caption:    "Cloud Deployment Certificate",
-				UploadedAt: secondIssuedAt,
+				ID:         "migrated-certificate-1-image",
+				URL:        "/assets/migrated/certificates/aws-intro-to-containers.png",
+				AltText:    "Introduction to Containers certificate preview",
+				Caption:    "Introduction to Containers",
+				UploadedAt: createdAt,
 			},
-			Featured:  false,
-			SortOrder: 20,
+			SortOrder: 1,
 			Status:    certificates.StatusPublished,
-			IssuedAt:  &secondIssuedAt,
-			CreatedAt: secondIssuedAt,
+			CreatedAt: createdAt,
 		},
 	}
+
+	seedCertificates = append(seedCertificates, bootdevCertificates()...)
+	return seedCertificates
+}
+
+func bootdevCertificates() []certificates.Certificate {
+	seeds := bootdevCertificateSeeds()
+	certificatesFromCSV := make([]certificates.Certificate, 0, len(seeds))
+	for index, seed := range seeds {
+		createdAt := parseOptionalSeedTime(seed.createdAt)
+		certificate := certificates.Certificate{
+			ID:            "bootdev-certificate-" + seed.sourceID,
+			Slug:          seedSlugify("bootdev " + seed.sourceID + " " + seed.title),
+			Title:         seed.title,
+			Issuer:        seed.issuer,
+			Summary:       seed.summary,
+			Description:   seed.description,
+			CredentialURL: seed.credentialURL,
+			SortOrder:     index + 2,
+			Status:        certificates.StatusPublished,
+			CreatedAt:     createdAt,
+			UpdatedAt:     createdAt,
+		}
+		issuedAt := parseOptionalSeedTime(seed.issuedAt)
+		if !issuedAt.IsZero() {
+			certificate.IssuedAt = &issuedAt
+		}
+
+		if seed.imageURL != "" {
+			certificate.Image = &certificates.CertificateImage{
+				ID:         certificate.ID + "-image",
+				URL:        seed.imageURL,
+				AltText:    seed.imageAlt,
+				Caption:    seed.title,
+				Width:      seed.imageWidth,
+				Height:     seed.imageHeight,
+				UploadedAt: createdAt,
+			}
+		}
+
+		certificatesFromCSV = append(certificatesFromCSV, certificate)
+	}
+
+	return certificatesFromCSV
+}
+
+func parseOptionalSeedTime(value string) time.Time {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}
+	}
+	parsed, err := time.Parse(time.RFC3339Nano, value)
+	if err != nil {
+		return time.Time{}
+	}
+	return parsed
+}
+
+func migratedProject(sourceID string, title string, description string, githubURL string, demoURL string, tags string, tools string, thumbnail string, sortOrder int, createdAt string, archived bool, galleryImages ...string) projects.Project {
+	parsedCreatedAt := mustParseCSVTimestamp(createdAt)
+	cleanTitle := strings.TrimSpace(title)
+	project := projects.Project{
+		ID:          "migrated-project-" + sourceID,
+		Slug:        seedSlugify("migrated project " + sourceID + " " + cleanTitle),
+		Title:       cleanTitle,
+		Summary:     strings.TrimSpace(description),
+		Description: strings.TrimSpace(description),
+		TechStack:   splitSeedCSVList(tools),
+		Tags:        splitSeedCSVList(tags),
+		GitHubURL:   strings.TrimSpace(githubURL),
+		DemoURL:     strings.TrimSpace(demoURL),
+		Archived:    archived,
+		SortOrder:   sortOrder,
+		Status:      projects.StatusPublished,
+		CreatedAt:   parsedCreatedAt,
+		PublishedAt: &parsedCreatedAt,
+	}
+
+	if strings.TrimSpace(thumbnail) != "" {
+		project.MainImage = &projects.ProjectImage{
+			ID:         "migrated-project-" + sourceID + "-main-image",
+			URL:        strings.TrimSpace(thumbnail),
+			AltText:    cleanTitle + " project preview",
+			Caption:    cleanTitle,
+			SortOrder:  0,
+			UploadedAt: parsedCreatedAt,
+		}
+	}
+
+	for index, imageURL := range galleryImages {
+		imageURL = strings.TrimSpace(imageURL)
+		if imageURL == "" {
+			continue
+		}
+		project.Images = append(project.Images, projects.ProjectImage{
+			ID:         fmt.Sprintf("migrated-project-%s-gallery-%d", sourceID, index+1),
+			URL:        imageURL,
+			AltText:    cleanTitle + " screenshot",
+			Caption:    strings.TrimSuffix(path.Base(imageURL), path.Ext(imageURL)),
+			SortOrder:  index + 1,
+			UploadedAt: parsedCreatedAt,
+		})
+	}
+
+	return project
 }
 
 func sampleArticles() []articles.Article {
@@ -549,203 +726,418 @@ func sampleArticles() []articles.Article {
 	}
 }
 
-func sampleWorkExperiences() []workexperience.WorkExperience {
-	firstStartedAt := time.Date(2024, time.January, 1, 9, 0, 0, 0, time.UTC)
-	secondStartedAt := time.Date(2022, time.March, 1, 9, 0, 0, 0, time.UTC)
-	secondEndedAt := time.Date(2023, time.December, 31, 17, 0, 0, 0, time.UTC)
-	publishedAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+func sampleWorkExperienceIDsForCleanup() []string {
+	return []string{
+		"sample-arete-labs-senior-software-engineer",
+		"arete-labs-senior-software-engineer",
+		"sample-northstar-systems-backend-engineer",
+		"northstar-systems-backend-engineer",
+		"migrated-work-experience-1",
+		"migrated-work-experience-1-linkage-web-design-and-development-services-web-designer",
+		"migrated-work-experience-2",
+		"migrated-work-experience-2-brewedlogic-inc-web-developer",
+		"migrated-work-experience-3",
+		"migrated-work-experience-3-haru-app-developer",
+		"migrated-work-experience-4",
+		"migrated-work-experience-4-freelance-software-developer",
+		"migrated-work-experience-5",
+		"migrated-work-experience-5-sitel-call-center-representative",
+		"migrated-work-experience-6",
+		"migrated-work-experience-6-justpressone-inc-full-stack-developer",
+		"migrated-work-experience-7",
+		"migrated-work-experience-7-pinzak-networks-back-end-developer",
+		"migrated-work-experience-8",
+		"migrated-work-experience-8-impactify-front-end-developer",
+		"migrated-work-experience-9",
+		"migrated-work-experience-9-genpact-it-consultant",
+	}
+}
 
+func sampleWorkExperiences() []workexperience.WorkExperience {
 	return []workexperience.WorkExperience{
-		{
-			ID:             "sample-arete-labs-senior-software-engineer",
-			Slug:           "arete-labs-senior-software-engineer",
-			Title:          "Senior Software Engineer",
-			Company:        "Arete Labs",
-			CompanyURL:     "https://example.com",
-			CompanyLogoURL: "https://picsum.photos/seed/arete-labs-logo/512/512",
-			EmploymentType: "Full-time",
-			Location:       "Manila, Philippines",
-			LocationType:   "Remote",
-			Summary:        "Builds APIs, admin workflows, and content-management tools with practical deployment paths.",
-			Description:    "Owns backend modeling, authenticated CRUD APIs, upload flows, and frontend integration details for content operations.",
-			Highlights: []string{
-				"Shipped PostgreSQL-backed content APIs.",
-				"Improved admin publishing workflows with focused validation and tests.",
-			},
-			Responsibilities: []string{
-				"Design and implement Go HTTP APIs.",
-				"Model content data and persistence behavior.",
-				"Review frontend data contracts and operational workflows.",
-			},
-			TechStack: []string{
-				"Go",
-				"PostgreSQL",
-				"TypeScript",
-			},
-			Skills: []string{
-				"API Design",
-				"Data Modeling",
-				"Testing",
-			},
-			StartedAt:   firstStartedAt,
-			Current:     true,
-			Featured:    true,
-			SortOrder:   10,
-			Status:      workexperience.StatusPublished,
-			PublishedAt: &publishedAt,
-			CreatedAt:   firstStartedAt,
-		},
-		{
-			ID:             "sample-northstar-systems-backend-engineer",
-			Slug:           "northstar-systems-backend-engineer",
-			Title:          "Backend Engineer",
-			Company:        "Northstar Systems",
-			CompanyURL:     "https://example.com",
-			CompanyLogoURL: "https://picsum.photos/seed/northstar-logo/512/512",
-			EmploymentType: "Contract",
-			Location:       "Remote",
-			LocationType:   "Remote",
-			Summary:        "Delivered backend services and database-backed features for small product teams.",
-			Description:    "Implemented HTTP APIs, relational schemas, and maintenance workflows for operational tools.",
-			Highlights: []string{
-				"Reduced manual data cleanup through clearer API validation.",
-				"Added regression coverage for critical content workflows.",
-			},
-			Responsibilities: []string{
-				"Build backend service endpoints.",
-				"Maintain PostgreSQL data models.",
-				"Collaborate on release validation.",
-			},
-			TechStack: []string{
-				"Go",
-				"PostgreSQL",
-				"React",
-			},
-			Skills: []string{
-				"Backend Engineering",
-				"Reliability",
-				"Code Review",
-			},
-			StartedAt:   secondStartedAt,
-			EndedAt:     &secondEndedAt,
-			Current:     false,
-			Featured:    false,
-			SortOrder:   20,
-			Status:      workexperience.StatusPublished,
-			PublishedAt: &publishedAt,
-			CreatedAt:   secondStartedAt,
-		},
+		migratedWorkExperience("1", "Web Designer", "Linkage Web Design and Development Services", "2018-11-01", "2019-04-15", "Internship", 3, "https://linkage.ph", "2023-07-19 03:54:47.36328+00", "Turned static designs into lead-focused web pages.", []string{
+			"Built responsive website templates from Adobe design files.",
+			"Created straightforward pages aimed at converting visitor interest into leads.",
+		}),
+		migratedWorkExperience("2", "Web Developer", "Brewedlogic Inc", "2019-11-15", "2021-01-01", "Regular", 5, "https://brewedlogic.com", "2023-07-19 03:57:01.151226+00", "Built practical web systems across UI, APIs, and support workflows.", []string{
+			"Converted UI/UX designs into working React, Vue, and Angular interfaces.",
+			"Built backend APIs with Python, Django, NodeJS, Express, NestJS, PHP, and Laravel.",
+			"Maintained and diagnosed production information systems.",
+			"Worked across planning, coding, testing, and maintenance in an agile workflow.",
+			"Used Git and GitLab for version control and release coordination.",
+		}),
+		migratedWorkExperience("3", "App Developer", "Haru", "2019-07-15", "2019-08-30", "Contract", 4, "", "2023-07-19 03:58:29.484099+00", "Shipped a real-time ordering prototype into a usable web app.", []string{
+			"Built the live ordering flow from prototype to working product.",
+			"Created the UI/UX prototype in Adobe XD for client review.",
+			"Translated the approved interface into JavaScript application code.",
+		}),
+		migratedWorkExperience("4", "Software Developer", "Freelance", "2017-01-01", "2019-08-31", "Freelance", 2, "https://ealmendral.vercel.app", "2023-07-19 03:59:52.082606+00", "Handled small-business web builds from design to deployment.", []string{
+			"Built JavaScript and CSS user interfaces for web applications.",
+			"Developed backend services from the ground up.",
+			"Handled hosting, deployment, feature updates, and system setup.",
+			"Designed system architecture and databases.",
+			"Created UI/UX designs and prototypes with Adobe XD and Photoshop.",
+		}),
+		migratedWorkExperience("5", "Contact Center Representative", "Foundever (Sitel)", "2016-07-15", "2016-12-30", "Regular", 1, "https://www.linkedin.com/company/sitelgroup", "2023-07-19 04:00:56.881381+00", "Resolved customer issues across voice, email, and chat.", []string{
+			"Handled voice support with clear, calm communication.",
+			"Resolved email cases with practical next steps.",
+			"Answered chat conversations quickly and directly.",
+		}),
+		migratedWorkExperience("6", "Full-Stack Developer", "JustPressOne Inc.", "2021-06-21", "2023-05-15", "Regular", 8, "https://justpressone.com", "2023-07-19 04:02:30.8022+00", "Built a real-time contact center platform for multi-channel support.", []string{
+			"Delivered voice, SMS, chat, email, and real-time ticketing workflows.",
+			"Owned backend, frontend, database, server management, optimization, and documentation work.",
+			"Used Twilio, PusherJS, Laravel/PHP, NodeJS, and Azure services.",
+			"Replaced PusherJS with custom WebSocket services in version 2.",
+			"Integrated single sign-on with Microsoft Azure Authentication API.",
+			"Managed Azure cloud setup and operations.",
+		}),
+		migratedWorkExperience("7", "Back-End Developer", "Pinzak Networks", "2021-01-20", "2021-05-15", "Contract", 6, "https://www.pinzak.com", "2023-07-19 04:04:13.539616+00", "Built ecommerce backend services for accounts, payments, and catalog workflows.", []string{
+			"Developed web API services for the Latin Tienda ecommerce site.",
+			"Built user account and digital wallet flows for recording payments.",
+			"Contributed PHP/Laravel and NodeJS backend services.",
+			"Implemented backend pagination, filters, and sorting.",
+		}),
+		migratedWorkExperience("8", "Front-End Developer", "Impactify", "2022-05-01", "2022-08-30", "Contract", 7, "https://impactify.io", "2023-07-19 04:12:21.534478+00", "Built the frontend for a cleaner, faster internal platform.", []string{
+			"Developed the frontend for version 2 of the internal system.",
+			"Built reusable UI libraries for authentication, tables, charts, and internal pages.",
+			"Collaborated with project and backend teams to ship the front-facing system.",
+		}),
+		migratedWorkExperience("9", "Consultant", "Genpact", "2023-12-15", "", "Full-time", 9, "https://www.genpact.com", "2024-08-24 02:25:06.981404+00", "Improved internal banking systems with better UI, delivery flow, and performance.", []string{
+			"Deployed as a developer for Macquarie company systems.",
+			"Developed internal systems for bank operations.",
+			"Improved user interfaces, DevOps workflows, and performance.",
+			"Worked with event-driven architecture, microservices, and micro-frontends.",
+		}),
+	}
+}
+
+func sampleSkillCategoryIDsForCleanup() []string {
+	return []string{
+		"sample-skill-category-backend-engineering",
+		"backend-engineering",
+		"sample-skill-category-frontend-engineering",
+		"frontend-engineering",
+		"sample-skill-category-cloud-devops",
+		"cloud-devops",
+		"migrated-skill-category-1",
+		"frontend",
+		"migrated-skill-category-2",
+		"backend",
+		"migrated-skill-category-3",
+		"ui-ux-design",
+		"migrated-skill-category-4",
+		"devops",
+		"migrated-skill-category-5",
+		"familiarity",
+		"migrated-skill-category-6",
+		"automated-testing",
+		"migrated-skill-category-7",
+		"databases",
+		"migrated-skill-category-ai-tools",
+		"ai-tools",
+		"migrated-skill-category-current-focus",
+		"current-focus",
+		"migrated-skill-category-ai-assisted-engineering",
+		"ai-assisted-engineering",
 	}
 }
 
 func sampleSkillCategories() []skills.SkillCategory {
-	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
-
 	return []skills.SkillCategory{
+		migratedSkillCategory("1", "Frontend", 1, "2023-07-19 22:04:15.228236+00"),
+		migratedSkillCategory("2", "Backend", 2, "2023-07-19 22:04:26.850767+00"),
+		migratedSkillCategory("3", "UI/UX Design", 5, "2023-07-19 22:04:49.869442+00"),
+		migratedSkillCategory("4", "DevOps", 3, "2023-07-19 22:04:59.171454+00"),
+		migratedSkillCategory("5", "Cloud & Other", 7, "2023-07-19 22:05:23.00957+00"),
+		migratedSkillCategory("6", "Testing", 6, "2023-07-19 22:45:16.794502+00"),
+		migratedSkillCategory("7", "Databases", 4, "2023-07-19 22:49:44.682249+00"),
 		{
-			ID:          "sample-skill-category-backend-engineering",
-			Slug:        "backend-engineering",
-			Name:        "Backend Engineering",
-			Description: "API design, Go services, authentication, and relational data modeling.",
-			IconClass:   "hugeicons-pro:server-stack-01",
-			SortOrder:   10,
+			ID:          "migrated-skill-category-ai-assisted-engineering",
+			Slug:        "ai-assisted-engineering",
+			Name:        "AI-Assisted Engineering",
+			Description: "AI-assisted tools, practices, and engineering workflow focus areas.",
+			SortOrder:   0,
 			Status:      skills.StatusPublished,
-			CreatedAt:   createdAt,
+			CreatedAt:   mustParseCSVTimestamp("2024-08-24 02:44:45.510773+00"),
 		},
-		{
-			ID:          "sample-skill-category-frontend-engineering",
-			Slug:        "frontend-engineering",
-			Name:        "Frontend Engineering",
-			Description: "React, TypeScript, accessible forms, and responsive admin interfaces.",
-			IconClass:   "hugeicons-pro:web-design-01",
-			SortOrder:   20,
-			Status:      skills.StatusPublished,
-			CreatedAt:   createdAt,
-		},
-		{
-			ID:          "sample-skill-category-cloud-devops",
-			Slug:        "cloud-devops",
-			Name:        "Cloud & DevOps",
-			Description: "Containerized local workflows, cloud storage, deployment, and CI checks.",
-			IconClass:   "hugeicons-pro:cloud-server",
-			SortOrder:   30,
-			Status:      skills.StatusPublished,
-			CreatedAt:   createdAt,
-		},
+	}
+}
+
+func sampleSkillIDsForCleanup() []string {
+	return []string{
+		"sample-skill-api-design",
+		"sample-skill-go",
+		"sample-skill-postgresql",
+		"migrated-skill-1",
+		"migrated-skill-2",
+		"migrated-skill-3",
+		"migrated-skill-4",
+		"migrated-skill-5",
+		"migrated-skill-6",
+		"migrated-skill-7",
+		"migrated-skill-8",
+		"migrated-skill-9",
+		"migrated-skill-10",
+		"migrated-skill-11",
+		"migrated-skill-12",
+		"migrated-skill-13",
+		"migrated-skill-14",
+		"migrated-skill-15",
+		"migrated-skill-16",
+		"migrated-skill-17",
+		"migrated-skill-18",
+		"migrated-skill-19",
+		"migrated-skill-20",
+		"migrated-skill-21",
+		"migrated-skill-22",
+		"migrated-skill-23",
+		"migrated-skill-24",
+		"migrated-skill-25",
+		"migrated-skill-26",
+		"migrated-skill-27",
+		"migrated-skill-28",
+		"migrated-skill-29",
+		"migrated-skill-30",
+		"migrated-skill-31",
+		"migrated-skill-32",
+		"migrated-skill-33",
+		"migrated-skill-34",
+		"migrated-skill-35",
+		"migrated-skill-36",
+		"migrated-skill-37",
+		"migrated-skill-38",
+		"migrated-skill-39",
+		"migrated-skill-40",
+		"migrated-skill-41",
+		"migrated-skill-42",
+		"migrated-skill-43",
+		"migrated-skill-44",
+		"migrated-skill-45",
+		"migrated-skill-ai-codex",
+		"migrated-skill-ai-claude",
+		"migrated-skill-ai-openai",
+		"migrated-skill-ai-chatgpt",
+		"migrated-skill-ai-cursor",
+		"migrated-skill-ai-github-copilot",
+		"current-focus-skill-agentic-engineering",
+		"current-focus-skill-codex",
+		"current-focus-skill-claude",
+		"current-focus-skill-openai",
+		"current-focus-skill-chatgpt",
+		"current-focus-skill-cursor",
+		"current-focus-skill-github-copilot",
+		"ai-assisted-engineering-skill-agentic-engineering",
+		"ai-assisted-engineering-skill-codex",
+		"ai-assisted-engineering-skill-claude",
+		"ai-assisted-engineering-skill-rag",
+		"ai-assisted-engineering-skill-local-llm",
+		"ai-assisted-engineering-skill-automated-testing",
+		"ai-assisted-engineering-skill-workflow-automation",
 	}
 }
 
 func sampleSkills() []skills.Skill {
-	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
-
 	return []skills.Skill{
-		{
-			ID:         "sample-skill-api-design",
-			CategoryID: "sample-skill-category-backend-engineering",
-			Name:       "API Design",
-			Summary:    "Designs clear HTTP resources, validation paths, and response contracts.",
-			SortOrder:  10,
-			Featured:   true,
-			Status:     skills.StatusPublished,
-			CreatedAt:  createdAt,
-		},
-		{
-			ID:         "sample-skill-go",
-			CategoryID: "sample-skill-category-backend-engineering",
-			Name:       "Go",
-			Summary:    "Builds practical Go services with standard-library HTTP routing and tests.",
-			SortOrder:  20,
-			Featured:   true,
-			Status:     skills.StatusPublished,
-			CreatedAt:  createdAt,
-		},
-		{
-			ID:         "sample-skill-postgresql",
-			CategoryID: "sample-skill-category-backend-engineering",
-			Name:       "PostgreSQL",
-			Summary:    "Models relational content, migrations, indexing, and query filtering.",
-			SortOrder:  30,
-			Featured:   true,
-			Status:     skills.StatusPublished,
-			CreatedAt:  createdAt,
-		},
+		migratedSkill("1", "React", "1", 1, "2023-07-19 22:23:45.376332+00"),
+		migratedSkill("2", "State management", "1", 2, "2023-07-19 22:24:02.270672+00"),
+		migratedSkill("3", "Vue", "1", 3, "2023-07-19 22:24:12.053144+00"),
+		migratedSkill("4", "CSS, Sass, Tailwind", "1", 4, "2023-07-19 22:24:27.707273+00"),
+		migratedSkill("5", "Angular", "1", 5, "2023-07-19 22:24:52.476529+00"),
+		migratedSkill("6", "Next.js", "1", 6, "2023-07-19 22:25:30.94493+00"),
+		migratedSkill("7", "Nuxt", "1", 7, "2023-07-19 22:25:45.913427+00"),
+		migratedSkill("8", "Performance", "1", 8, "2023-07-19 22:26:14.124982+00"),
+		migratedSkill("9", "PWAs", "1", 9, "2023-07-19 22:26:29.800911+00"),
+		migratedSkill("10", "Node.js", "2", 1, "2023-07-19 22:33:05.358685+00"),
+		migratedSkill("11", "REST APIs", "2", 2, "2023-07-19 22:33:17.131626+00"),
+		migratedSkill("12", "Laravel/PHP", "2", 3, "2023-07-19 22:33:28.883544+00"),
+		migratedSkill("13", "Express", "2", 13, "2023-07-19 22:33:42.202509+00"),
+		migratedSkill("14", "NestJS", "2", 14, "2023-07-19 22:33:50.538464+00"),
+		migratedSkill("15", "GraphQL", "2", 15, "2023-07-19 22:34:04.135+00"),
+		migratedSkill("45", "Python", "2", 16, "2024-08-24 02:44:45.510773+00"),
+		migratedSkill("16", "Wireframes", "3", 16, "2023-07-19 22:37:30.238348+00"),
+		migratedSkill("17", "Prototyping", "3", 17, "2023-07-19 22:37:43.786248+00"),
+		migratedSkill("18", "Adobe XD", "3", 18, "2023-07-19 22:38:23.757277+00"),
+		migratedSkill("19", "Color systems", "3", 19, "2023-07-19 22:38:37.836857+00"),
+		migratedSkill("20", "Web design", "3", 20, "2023-07-19 22:38:58.537378+00"),
+		migratedSkill("21", "UX flows", "3", 21, "2023-07-19 22:39:25.603032+00"),
+		migratedSkill("22", "Linux servers", "4", 22, "2023-07-19 22:42:13.255625+00"),
+		migratedSkill("23", "Docker", "4", 23, "2023-07-19 22:42:25.425973+00"),
+		migratedSkill("24", "Scripts", "4", 24, "2023-07-19 22:42:37.164173+00"),
+		migratedSkill("25", "CI", "4", 25, "2023-07-19 22:42:52.35414+00"),
+		migratedSkill("26", "CD", "4", 26, "2023-07-19 22:42:59.530829+00"),
+		migratedSkill("27", "Logs & monitoring", "4", 27, "2023-07-19 22:43:50.605097+00"),
+		migratedSkill("28", "NGINX", "4", 28, "2023-07-19 22:44:30.250109+00"),
+		migratedSkill("44", "Kubernetes", "4", 29, "2024-08-24 02:44:45.510773+00"),
+		migratedSkill("29", "Unit tests", "6", 29, "2023-07-19 22:46:01.224349+00"),
+		migratedSkill("30", "Integration tests", "6", 30, "2023-07-19 22:46:20.277706+00"),
+		migratedSkill("31", "E2E tests", "6", 31, "2023-07-19 22:46:30.196754+00"),
+		migratedSkill("32", "Jest/RTL", "6", 32, "2023-07-19 22:46:41.035527+00"),
+		migratedSkill("33", "Azure", "5", 33, "2023-07-19 22:47:50.592935+00"),
+		migratedSkill("34", "AWS", "5", 34, "2023-07-19 22:48:22.591459+00"),
+		migratedSkill("35", "Go Language", "5", 35, "2023-07-19 22:49:03.673053+00"),
+		migratedSkill("36", "Flutter", "5", 36, "2023-07-19 22:49:21.58145+00"),
+		migratedSkill("37", "MySQL", "7", 37, "2023-07-19 22:50:52.733462+00"),
+		migratedSkill("38", "PostgreSQL", "7", 38, "2023-07-19 22:51:06.192537+00"),
+		migratedSkill("39", "MongoDB", "7", 39, "2023-07-19 22:51:14.656071+00"),
+		migratedSkill("40", "GCP Firestore", "7", 40, "2023-07-19 22:51:35.21493+00"),
+		migratedSkill("41", "Redis", "7", 41, "2023-07-19 22:51:47.716913+00"),
+		migratedSkill("42", "Cypress", "6", 42, "2023-07-20 02:21:13.602774+00"),
+		migratedSkill("43", "Enzyme", "6", 43, "2023-07-20 02:21:22.091901+00"),
+		aiAssistedEngineeringSkill("agentic-engineering", "Agentic Engineering", 1),
+		aiAssistedEngineeringSkill("codex", "Codex", 2),
+		aiAssistedEngineeringSkill("claude", "Claude", 3),
+		aiAssistedEngineeringSkill("rag", "RAG", 4),
+		aiAssistedEngineeringSkill("local-llm", "Local LLM", 5),
+		aiAssistedEngineeringSkill("automated-testing", "Automated Testing", 6),
+		aiAssistedEngineeringSkill("workflow-automation", "Workflow Automation", 7),
 	}
 }
 
-func sampleLinks() []links.Link {
-	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+func migratedSkillCategory(sourceID string, name string, sortOrder int, createdAt string) skills.SkillCategory {
+	return skills.SkillCategory{
+		ID:        "migrated-skill-category-" + sourceID,
+		Slug:      seedSlugify(name),
+		Name:      name,
+		SortOrder: sortOrder,
+		Status:    skills.StatusPublished,
+		CreatedAt: mustParseCSVTimestamp(createdAt),
+	}
+}
 
+func migratedSkill(sourceID string, name string, categoryID string, sortOrder int, createdAt string) skills.Skill {
+	return skills.Skill{
+		ID:         "migrated-skill-" + sourceID,
+		CategoryID: "migrated-skill-category-" + categoryID,
+		Name:       name,
+		SortOrder:  sortOrder,
+		Status:     skills.StatusPublished,
+		CreatedAt:  mustParseCSVTimestamp(createdAt),
+	}
+}
+
+func aiAssistedEngineeringSkill(sourceID string, name string, sortOrder int) skills.Skill {
+	return skills.Skill{
+		ID:         "ai-assisted-engineering-skill-" + sourceID,
+		CategoryID: "migrated-skill-category-ai-assisted-engineering",
+		Name:       name,
+		SortOrder:  sortOrder,
+		Status:     skills.StatusPublished,
+		CreatedAt:  mustParseCSVTimestamp("2024-08-24 02:44:45.510773+00"),
+	}
+}
+
+func migratedWorkExperience(sourceID string, title string, company string, startedAt string, endedAt string, employmentType string, sortOrder int, companyURL string, createdAt string, description string, responsibilities []string) workexperience.WorkExperience {
+	parsedStartedAt := mustParseCSVDate(startedAt)
+	parsedEndedAt := mustParseOptionalCSVDate(endedAt)
+	parsedCreatedAt := mustParseCSVTimestamp(createdAt)
+	description = strings.TrimSpace(description)
+
+	return workexperience.WorkExperience{
+		ID:               "migrated-work-experience-" + sourceID,
+		Slug:             seedSlugify("migrated work experience " + sourceID + " " + company + " " + title),
+		Title:            title,
+		Company:          company,
+		CompanyURL:       companyURL,
+		EmploymentType:   employmentType,
+		Summary:          description,
+		Description:      description,
+		Responsibilities: responsibilities,
+		StartedAt:        parsedStartedAt,
+		EndedAt:          parsedEndedAt,
+		Current:          parsedEndedAt == nil,
+		SortOrder:        sortOrder,
+		Status:           workexperience.StatusPublished,
+		PublishedAt:      &parsedCreatedAt,
+		CreatedAt:        parsedCreatedAt,
+	}
+}
+
+func mustParseCSVTimestamp(value string) time.Time {
+	parsed, err := time.Parse("2006-01-02 15:04:05.999999999-07", value)
+	if err != nil {
+		log.Fatalf("parse csv timestamp %q: %v", value, err)
+	}
+	return parsed.UTC()
+}
+
+func mustParseCSVDate(value string) time.Time {
+	parsed, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		log.Fatalf("parse csv date %q: %v", value, err)
+	}
+	return parsed.UTC()
+}
+
+func mustParseOptionalCSVDate(value string) *time.Time {
+	if strings.TrimSpace(value) == "" {
+		return nil
+	}
+	parsed := mustParseCSVDate(value)
+	return &parsed
+}
+
+func splitSeedCSVList(value string) []string {
+	parts := strings.Split(value, ",")
+	values := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		key := strings.ToLower(part)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		values = append(values, part)
+	}
+	return values
+}
+
+var seedSlugSeparator = regexp.MustCompile(`[^a-z0-9]+`)
+
+func seedSlugify(value string) string {
+	slug := strings.Trim(seedSlugSeparator.ReplaceAllString(strings.ToLower(strings.TrimSpace(value)), "-"), "-")
+	if slug == "" {
+		return "item"
+	}
+	return slug
+}
+
+func sampleLinks() []links.Link {
 	return []links.Link{
-		{
-			ID:        "sample-link-github",
-			Label:     "GitHub",
-			URL:       "https://github.com/eralmendral",
-			IconClass: "hugeicons-pro:github",
-			SortOrder: 10,
-			Star:      true,
-			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-link-linkedin",
-			Label:     "LinkedIn",
-			URL:       "https://www.linkedin.com/in/eralmendral",
-			IconClass: "hugeicons-pro:linkedin-01",
-			SortOrder: 20,
-			Star:      false,
-			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-link-resume",
-			Label:     "Resume",
-			URL:       "/assets/cv.pdf",
-			IconClass: "hugeicons-pro:file-star",
-			SortOrder: 30,
-			Star:      true,
-			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
-		},
+		migratedLink("1", "Stack Overflow", "https://stackoverflow.com/", 1, "2024-08-24 03:11:29.705816+00"),
+		migratedLink("2", "Youtube", "https://youtube.com", 2, "2024-08-24 03:12:15.111039+00"),
+		migratedLink("3", "HackerRank", "https://www.hackerrank.com/profile/eralmendral", 3, "2024-08-24 03:12:46.201188+00"),
+		migratedLink("4", "Dribbble", "https://dribbble.com/", 4, "2024-08-24 03:13:17.242522+00"),
+	}
+}
+
+func migratedLink(sourceID string, label string, url string, sortOrder int, createdAt string) links.Link {
+	return links.Link{
+		ID:        "migrated-link-" + sourceID,
+		Label:     strings.TrimSpace(label),
+		URL:       strings.TrimSpace(url),
+		SortOrder: sortOrder,
+		Status:    links.StatusPublished,
+		CreatedAt: mustParseCSVTimestamp(createdAt),
+	}
+}
+
+func sampleLinkIDsForCleanup() []string {
+	return []string{
+		"sample-link-github",
+		"sample-link-linkedin",
+		"sample-link-resume",
+		"sample-link-stack-overflow",
+		"sample-link-youtube",
+		"sample-link-hackerrank",
+		"sample-link-dribbble",
+		"migrated-link-1",
+		"migrated-link-2",
+		"migrated-link-3",
+		"migrated-link-4",
 	}
 }
 
@@ -756,8 +1148,8 @@ func sampleTools() []tools.Tool {
 		{
 			ID:        "sample-tool-codex",
 			Name:      "Codex",
-			Category:  "AI & Coding Assistants",
-			Summary:   "Agentic coding workflow for implementing, testing, and reviewing repository changes.",
+			Category:  "AI Tools",
+			Summary:   "Agentic coding for implementation, tests, reviews, and repo maintenance.",
 			IconClass: "hugeicons-pro:bot",
 			Tags: []string{
 				"ai",
@@ -772,8 +1164,8 @@ func sampleTools() []tools.Tool {
 		{
 			ID:        "sample-tool-claude",
 			Name:      "Claude",
-			Category:  "AI & Coding Assistants",
-			Summary:   "AI assistant for reasoning, drafting, coding support, and technical exploration.",
+			Category:  "AI Tools",
+			Summary:   "Reasoning assistant for planning, technical review, and clear writing.",
 			IconClass: "hugeicons-pro:sparkles",
 			Tags: []string{
 				"ai",
@@ -786,47 +1178,47 @@ func sampleTools() []tools.Tool {
 			CreatedAt: createdAt,
 		},
 		{
-			ID:        "sample-tool-opencode",
-			Name:      "OpenCode",
-			Category:  "AI & Coding Assistants",
-			Summary:   "Terminal-based AI coding workflow for codebase edits and review loops.",
-			IconClass: "hugeicons-pro:terminal",
+			ID:        "sample-tool-openai",
+			Name:      "OpenAI",
+			Category:  "AI Tools",
+			Summary:   "Model platform for assistants, automation, and product AI features.",
+			IconClass: "hugeicons-pro:ai-brain-01",
 			Tags: []string{
 				"ai",
-				"terminal",
-				"coding",
+				"models",
+				"automation",
 			},
 			SortOrder: 30,
-			Featured:  false,
-			Status:    tools.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-tool-google-cloud-platform",
-			Name:      "Google Cloud Platform",
-			Category:  "Cloud & DevOps",
-			Summary:   "Cloud platform for deploying, operating, and scaling production services.",
-			IconClass: "hugeicons-pro:cloud",
-			Tags: []string{
-				"cloud",
-				"gcp",
-				"deployment",
-			},
-			SortOrder: 40,
 			Featured:  true,
 			Status:    tools.StatusPublished,
 			CreatedAt: createdAt,
 		},
 		{
-			ID:        "sample-tool-google-artifact-registry",
-			Name:      "Google Artifact Registry",
-			Category:  "Cloud & DevOps",
-			Summary:   "Managed registry for storing and distributing container images and build artifacts.",
-			IconClass: "hugeicons-pro:package",
+			ID:        "sample-tool-cursor",
+			Name:      "Cursor",
+			Category:  "AI Tools",
+			Summary:   "AI editor workflow for quick code changes and codebase navigation.",
+			IconClass: "hugeicons-pro:cursor-magic-selection-02",
 			Tags: []string{
-				"registry",
-				"containers",
-				"gcp",
+				"ai",
+				"editor",
+				"coding",
+			},
+			SortOrder: 40,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+		{
+			ID:        "sample-tool-github-copilot",
+			Name:      "GitHub Copilot",
+			Category:  "AI Tools",
+			Summary:   "Inline coding assistant for everyday implementation support.",
+			IconClass: "hugeicons-pro:github",
+			Tags: []string{
+				"ai",
+				"github",
+				"coding",
 			},
 			SortOrder: 50,
 			Featured:  false,
@@ -834,21 +1226,64 @@ func sampleTools() []tools.Tool {
 			CreatedAt: createdAt,
 		},
 		{
-			ID:        "sample-tool-github-container-registry",
-			Name:      "GitHub Container Registry",
+			ID:        "sample-tool-docker",
+			Name:      "Docker",
 			Category:  "Cloud & DevOps",
-			Summary:   "Container registry for publishing release images directly from GitHub Actions.",
-			IconClass: "hugeicons-pro:cloud-server",
+			Summary:   "Containerized local services and reproducible deployment workflows.",
+			IconClass: "fa-brands fa-docker",
 			Tags: []string{
-				"registry",
 				"containers",
-				"ghcr",
+				"devops",
+				"local-dev",
 			},
 			SortOrder: 60,
 			Featured:  false,
 			Status:    tools.StatusPublished,
 			CreatedAt: createdAt,
 		},
+		{
+			ID:        "sample-tool-jetbrains",
+			Name:      "JetBrains",
+			Category:  "IDEs & Editors",
+			Summary:   "Structured IDE workflow for backend, frontend, refactoring, and tests.",
+			IconClass: "hugeicons-pro:code-folder",
+			Tags: []string{
+				"ide",
+				"productivity",
+				"engineering",
+			},
+			SortOrder: 70,
+			Featured:  false,
+			Status:    tools.StatusPublished,
+			CreatedAt: createdAt,
+		},
+	}
+}
+
+func sampleToolIDsForCleanup() []string {
+	return []string{
+		"sample-tool-codex",
+		"sample-tool-claude",
+		"sample-tool-opencode",
+		"sample-tool-openai",
+		"sample-tool-cursor",
+		"sample-tool-github-copilot",
+		"sample-tool-google-cloud-platform",
+		"sample-tool-google-artifact-registry",
+		"sample-tool-github-container-registry",
+		"sample-tool-docker",
+		"sample-tool-vscode",
+		"sample-tool-jetbrains",
+		"sample-tool-webstorm",
+		"sample-tool-goland",
+		"sample-tool-git",
+		"sample-tool-github",
+		"sample-tool-postman",
+		"sample-tool-supabase",
+		"sample-tool-vercel",
+		"sample-tool-aws-s3",
+		"sample-tool-github-actions",
+		"sample-tool-blender",
 	}
 }
 
@@ -1048,7 +1483,7 @@ func sampleIntro() intro.Intro {
 	return intro.Intro{
 		ID:          intro.DefaultID,
 		Title:       "Software | AI - Engineer",
-		Description: "I turn rough ideas into AI-powered products people can actually use: sharp interfaces, sturdy APIs, and workflows that hold up beyond the demo.",
+		Description: "I build thoughtful software with strong engineering, clean craft, and attention to both details and the bigger picture.",
 		ProfilePicture: &intro.IntroImage{
 			ID:         "sample-intro-profile-picture",
 			URL:        "https://picsum.photos/seed/ai-engineer-profile/1200/1200",

@@ -4,14 +4,15 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { HugeiconsIconComponent } from '@hugeicons/angular';
 import type { IconSvgObject } from '@hugeicons/angular';
 import {
-  Briefcase01Icon,
-  Certificate01Icon,
-  CodeSimpleIcon,
+  Award01Icon,
+  CodeIcon,
+  Folder01Icon,
   Film01Icon,
   GameController01Icon,
-  LinkSquare02Icon,
+  Link01Icon,
   MusicNote01Icon,
   PlayListIcon,
+  WorkIcon,
 } from '@hugeicons-pro/core-stroke-rounded';
 import { filter, map, startWith } from 'rxjs';
 
@@ -42,10 +43,11 @@ export class AppNavigationComponent {
   );
 
   protected readonly sectionLinks: NavigationLink[] = [
-    { title: 'Work XP', route: '/work-history', icon: Briefcase01Icon },
-    { title: 'Certificates', route: '/certificates', icon: Certificate01Icon },
-    { title: 'Skills', route: '/skills', icon: CodeSimpleIcon },
-    { title: 'Social Links', route: '/social-links', icon: LinkSquare02Icon },
+    { title: 'Projects', route: '/projects', icon: Folder01Icon },
+    { title: 'Work', route: '/work-history', icon: WorkIcon },
+    { title: 'Certs', route: '/certificates', icon: Award01Icon },
+    { title: 'Skills', route: '/skills', icon: CodeIcon },
+    { title: 'Socials', route: '/social-links', icon: Link01Icon },
   ];
   protected readonly entertainmentToggle: NavigationLink = {
     title: '/etc',

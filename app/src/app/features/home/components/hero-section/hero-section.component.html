@@ -4,8 +4,8 @@
       <img
         class="BrandLogo"
         [ngSrc]="logoPath()"
-        width="1024"
-        height="1024"
+        width="665"
+        height="678"
         alt=""
         priority
       >
@@ -35,13 +35,11 @@
                   [strokeWidth]="2.3"
                 />
               </span>
-              <span>{{ link.label }}</span>
+              <span class="HeroLinkLabel">{{ link.label }}</span>
             </a>
           }
         } @else if (externalLinksLoadFailed()) {
-          <button class="HeroLink InlineRetry" type="button" (click)="reloadLinks()">
-            Reload links
-          </button>
+          <p class="HeroEmpty">No data for links.</p>
         }
       </nav>
     </div>

@@ -24,6 +24,9 @@ dist/
 .angular/
 coverage/
 
+# Superseded generated icon output; app uses app/public/assets/icons-set/
+app/public/assets/icons/
+
 # Local Codex skills
 skills/
 

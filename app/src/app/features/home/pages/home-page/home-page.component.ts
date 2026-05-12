@@ -18,8 +18,29 @@ import type { HeroLink } from '../../models/home.models';
 
 const fallbackIntro = {
   title: 'Software | AI - Engineer',
-  description: 'I turn rough ideas into AI-powered products people can actually use: sharp interfaces, sturdy APIs, and workflows that hold up beyond the demo.',
+  description: 'I build thoughtful software with strong engineering, clean craft, and attention to both details and the bigger picture.',
 };
+
+const fallbackCenterLinks: PortfolioLink[] = [
+  {
+    id: 'fallback-github',
+    label: 'GitHub',
+    url: 'https://github.com/eralmendral',
+    icon_class: 'hugeicons-pro:github',
+    sort_order: 10,
+    star: true,
+    status: 'published',
+  },
+  {
+    id: 'fallback-resume',
+    label: 'Resume',
+    url: '/assets/cv.pdf',
+    icon_class: 'hugeicons-pro:file-star',
+    sort_order: 20,
+    star: true,
+    status: 'published',
+  },
+];
 
 const linkIconRegistry: Record<string, IconSvgObject> = {
   'hugeicons-pro:file-star': File01Icon,
@@ -52,7 +73,7 @@ export class HomePageComponent {
   protected readonly title = computed(() => this.currentIntro().title);
   protected readonly introduction = computed(() => this.currentIntro().description);
   protected readonly centerLinks = computed<HeroLink[]>(() =>
-    this.currentLinks().filter((link) => link.star && this.isCenterLink(link)).map((link) => ({
+    this.currentCenterLinks().map((link) => ({
       id: link.id,
       label: link.label,
       url: link.url,
@@ -105,6 +126,20 @@ export class HomePageComponent {
     } catch {
       return [];
     }
+  }
+
+  private currentCenterLinks(): PortfolioLink[] {
+    const linksByURL = new Map<string, PortfolioLink>();
+
+    for (const link of [
+      ...fallbackCenterLinks,
+      ...this.currentLinks().filter((link) => link.star && this.isCenterLink(link)),
+    ]) {
+      linksByURL.set(link.url, link);
+    }
+
+    return Array.from(linksByURL.values())
+      .sort((left, right) => left.sort_order - right.sort_order || left.label.localeCompare(right.label));
   }
 
   private isCenterLink(link: PortfolioLink): boolean {

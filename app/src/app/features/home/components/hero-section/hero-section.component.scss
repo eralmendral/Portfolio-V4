@@ -44,24 +44,21 @@
   width: min(100%, 650px);
   display: grid;
   justify-items: center;
-  gap: 30px;
+  gap: 24px;
   text-align: center;
 }
 
 .BrandLogo {
-  width: 288px;
-  height: 288px;
-  border-radius: 50%;
+  width: clamp(136px, 18vw, 196px);
+  height: auto;
   display: block;
   object-fit: contain;
-  filter: var(--app-logo-filter);
-  transition: filter 180ms ease;
 }
 
 .HeroCopy {
   display: grid;
   justify-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 h1 {
@@ -69,15 +66,17 @@ h1 {
   color: var(--app-heading);
   font-size: 30px;
   font-weight: 950;
-  line-height: 1.05;
+  line-height: 1.12;
+  text-wrap: balance;
 }
 
 .Lead {
-  max-width: 660px;
+  max-width: 620px;
   margin: 0;
   color: var(--app-copy);
-  font-size: 21px;
-  line-height: 1.5;
+  font-size: 19px;
+  line-height: 1.52;
+  text-wrap: pretty;
 }
 
 .HeroLinks {
@@ -89,7 +88,7 @@ h1 {
 
 .HeroExternalLinks {
   min-height: 0;
-  padding-block-start: 16px;
+  padding-block-start: 8px;
 }
 
 .HeroLink {
@@ -122,6 +121,11 @@ h1 {
   place-items: center;
 }
 
+.HeroExternalLink .HeroLinkLabel {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
 .HeroExternalLink .HeroLinkIcon {
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.18));
   text-shadow: 0 8px 12px rgba(0, 0, 0, 0.18);
@@ -133,8 +137,11 @@ hugeicons-icon {
   line-height: 0;
 }
 
-.InlineRetry {
-  cursor: pointer;
+.HeroEmpty {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .ScreenReaderOnly {
@@ -157,16 +164,16 @@ hugeicons-icon {
 
 @media (max-width: 1020px) {
   .HeroSection {
-    padding: 78px 22px 24px;
+    padding: 72px 22px;
   }
 
   .HeroContent {
-    gap: 18px;
+    gap: 20px;
   }
 
   .HeroExternalLinks {
     gap: 20px 28px;
-    padding-block-start: 12px;
+    padding-block-start: 6px;
   }
 
   .HeroExternalLink:hover {
@@ -175,51 +182,87 @@ hugeicons-icon {
 }
 
 @media (max-width: 720px) {
+  :host {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
   .HeroSection {
-    padding: 72px 16px 20px;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    padding: calc(76px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-left)) calc(76px + env(safe-area-inset-bottom));
   }
 
   .BrandLogo {
-    width: 210px;
-    height: 210px;
+    width: clamp(126px, 42vw, 164px);
   }
 
   .Lead {
-    max-width: 248px;
+    max-width: min(100%, 320px);
     font-size: 17px;
+    line-height: 1.48;
   }
 
   h1 {
     font-size: 25px;
+    line-height: 1.14;
   }
 
   .HeroExternalLinks {
-    gap: 18px 24px;
-    padding-block-start: 10px;
+    gap: 16px 22px;
+    padding-block-start: 4px;
+  }
+
+  .HeroLink {
+    min-width: 54px;
+    font-size: 13px;
+  }
+
+  .HeroExternalLink .HeroLinkLabel {
+    font-size: 11px;
   }
 }
 
-@media (max-height: 700px) {
+@media (min-width: 721px) and (max-height: 700px) {
   .HeroSection {
-    padding-block: 66px 16px;
+    padding-block: 52px;
   }
 
   .HeroContent {
-    gap: 12px;
+    gap: 14px;
   }
 
   .BrandLogo {
-    width: 150px;
-    height: 150px;
+    width: 118px;
   }
 
   .Lead {
     font-size: 15px;
-    line-height: 1.35;
+    line-height: 1.42;
   }
 
   h1 {
     font-size: 23px;
+    line-height: 1.12;
   }
 
+}
+
+@media (max-width: 380px) {
+  .BrandLogo {
+    width: clamp(120px, 44vw, 150px);
+  }
+
+  .Lead {
+    max-width: 100%;
+    font-size: 16px;
+    line-height: 1.48;
+  }
+
+  h1 {
+    font-size: 23px;
+    line-height: 1.14;
+  }
 }

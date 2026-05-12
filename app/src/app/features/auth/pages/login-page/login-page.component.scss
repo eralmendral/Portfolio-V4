@@ -55,10 +55,16 @@ input {
   padding: 8px 10px;
 }
 
-input:focus-visible,
 .SubmitButton:focus-visible {
   outline: 3px solid var(--app-toggle-focus);
   outline-offset: 3px;
+}
+
+input:focus,
+input:focus-visible,
+input:active {
+  border-color: color-mix(in srgb, var(--app-heading) 28%, var(--app-panel-border));
+  outline: 0;
 }
 
 .FormError {
@@ -69,10 +75,10 @@ input:focus-visible,
 
 .SubmitButton {
   min-height: 44px;
-  border: 1px solid var(--app-heading);
+  border: 1px solid #17191e;
   border-radius: 0;
-  background: var(--app-heading);
-  color: var(--app-page-bg);
+  background: #17191e;
+  color: #ffffff;
   cursor: pointer;
   font: inherit;
   font-weight: 900;

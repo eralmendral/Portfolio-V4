@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 
 import { ThemeService } from './core/services/theme.service';
 import { AppNavigationComponent } from './shared/components/app-navigation/app-navigation.component';
@@ -27,4 +28,19 @@ import { ThemeToggleComponent } from './shared/components/theme-toggle/theme-tog
 })
 export class App {
   protected readonly theme = inject(ThemeService);
+  private readonly router = inject(Router);
+  private readonly currentUrl = signal(this.router.url);
+  protected readonly isMinimalLayout = computed(() => {
+    const path = this.currentUrl().split('?')[0].split('#')[0];
+
+    return path === '/login' || path.startsWith('/admin');
+  });
+
+  constructor() {
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        this.currentUrl.set(event.urlAfterRedirects);
+      });
+  }
 }

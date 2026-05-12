@@ -38,9 +38,7 @@
 
 .ContactTrigger:focus-visible,
 .ContactClose:focus-visible,
-.ContactSubmit:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
+.ContactSubmit:focus-visible {
   outline: 3px solid var(--app-toggle-focus);
   outline-offset: 3px;
 }
@@ -145,6 +143,16 @@ textarea {
   padding: 9px 10px;
 }
 
+input:focus,
+input:focus-visible,
+input:active,
+textarea:focus,
+textarea:focus-visible,
+textarea:active {
+  border-color: color-mix(in srgb, var(--app-heading) 28%, var(--app-panel-border));
+  outline: 0;
+}
+
 textarea {
   min-height: 96px;
   resize: vertical;
@@ -195,7 +203,7 @@ hugeicons-icon {
 @media (max-width: 720px) {
   :host {
     inset-inline-end: 14px;
-    inset-block-end: 14px;
+    inset-block-end: calc(78px + env(safe-area-inset-bottom));
   }
 
   .ContactTrigger {
@@ -206,6 +214,8 @@ hugeicons-icon {
   .ContactPanel {
     inset-block-end: 54px;
     width: calc(100vw - 28px);
+    max-height: calc(100dvh - 150px - env(safe-area-inset-bottom));
+    overflow-y: auto;
     padding: 17px;
   }
 }

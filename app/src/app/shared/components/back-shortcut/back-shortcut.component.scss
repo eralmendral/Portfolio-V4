@@ -36,7 +36,7 @@ hugeicons-icon {
 @media (max-width: 720px) {
   .BackShortcut {
     inset-inline-start: 14px;
-    inset-block-end: 14px;
+    inset-block-end: calc(78px + env(safe-area-inset-bottom));
     width: 42px;
     height: 42px;
   }

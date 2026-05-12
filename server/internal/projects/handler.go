@@ -83,9 +83,20 @@ func (h *Handler) listProjects(w http.ResponseWriter, r *http.Request) {
 		featured = &parsed
 	}
 
+	var archived *bool
+	if rawArchived := r.URL.Query().Get("archived"); rawArchived != "" {
+		parsed, err := strconv.ParseBool(rawArchived)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "archived must be true or false", nil)
+			return
+		}
+		archived = &parsed
+	}
+
 	projects, err := h.store.List(r.Context(), ListFilter{
 		Status:   strings.TrimSpace(r.URL.Query().Get("status")),
 		Featured: featured,
+		Archived: archived,
 		Query:    strings.TrimSpace(r.URL.Query().Get("q")),
 	})
 	if err != nil {
@@ -187,6 +198,7 @@ func projectFromCreate(input CreateProjectRequest) Project {
 		GitHubURL:   normalizeURL(input.GitHubURL),
 		DemoURL:     normalizeURL(input.DemoURL),
 		Featured:    input.Featured,
+		Archived:    input.Archived,
 		SortOrder:   input.SortOrder,
 		Status:      status,
 		PublishedAt: publishTime(status, input.PublishedAt),
@@ -250,6 +262,9 @@ func applyUpdate(project *Project, input UpdateProjectRequest) {
 	}
 	if input.Featured != nil {
 		project.Featured = *input.Featured
+	}
+	if input.Archived != nil {
+		project.Archived = *input.Archived
 	}
 	if input.SortOrder != nil {
 		project.SortOrder = *input.SortOrder

@@ -24,8 +24,4 @@ export class HeroSectionComponent {
   readonly loadingExternalLinks = input(false);
   readonly externalLinksLoadFailed = input(false);
   readonly reloadExternalLinks = output<void>();
-
-  protected reloadLinks(): void {
-    this.reloadExternalLinks.emit();
-  }
 }

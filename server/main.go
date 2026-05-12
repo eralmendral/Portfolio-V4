@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/eralme/server/internal/articles"
@@ -27,6 +28,7 @@ import (
 	"github.com/eralme/server/internal/skills"
 	"github.com/eralme/server/internal/tools"
 	"github.com/eralme/server/internal/workexperience"
+	"github.com/getsentry/sentry-go"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -50,10 +52,20 @@ type config struct {
 	AdminPassword  string
 	MaxUploadBytes int64
 	ClientOrigins  []string
+	SentryDSN      string
+	Environment    string
+	Release        string
+	LogLevel       string
 }
+
+var requestIDCounter uint64
 
 func main() {
 	cfg := loadConfig()
+	sentryEnabled := initSentry(cfg)
+	if sentryEnabled {
+		defer sentry.Flush(2 * time.Second)
+	}
 
 	startupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -133,7 +145,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	router, err := buildRouter(cfg, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, musicStore, seriesStore, gameStore, dailyProgressStore, productStore, introStore, contactStore)
+	router, err := buildRouter(cfg, db, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, musicStore, seriesStore, gameStore, dailyProgressStore, productStore, introStore, contactStore)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -150,7 +162,7 @@ func main() {
 	}
 }
 
-func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, musicStore music.Store, seriesStore series.Store, gameStore games.Store, dailyProgressStore dailyprogress.Store, productStore products.Store, introStore intro.Store, contactStore contact.Store) (http.Handler, error) {
+func buildRouter(cfg config, db *sql.DB, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, musicStore music.Store, seriesStore series.Store, gameStore games.Store, dailyProgressStore dailyprogress.Store, productStore products.Store, introStore intro.Store, contactStore contact.Store) (http.Handler, error) {
 	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTIssuer, cfg.TokenTTL)
 
 	assetStore, err := uploadStore(cfg)
@@ -183,7 +195,13 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	contactHandler := contact.NewHandler(contactStore)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+		if err := db.PingContext(ctx); err != nil {
+			http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 	})
 	mux.Handle("POST /auth/login", auth.LoginHandler(tokenService, cfg.AdminUsername, cfg.AdminPassword))
@@ -287,7 +305,7 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 		mux.Handle("/uploads/projects/", http.StripPrefix("/uploads/projects/", http.FileServer(http.Dir(cfg.UploadDir))))
 	}
 
-	return withCommonHeaders(mux, cfg.ClientOrigins), nil
+	return withRequestMonitoring(withCommonHeaders(mux, cfg.ClientOrigins)), nil
 }
 
 func openDatabase(ctx context.Context, databaseURL string) (*sql.DB, error) {
@@ -334,7 +352,28 @@ func loadConfig() config {
 		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
 		MaxUploadBytes: int64FromEnv("MAX_UPLOAD_BYTES", 300<<20),
 		ClientOrigins:  clientOriginsFromEnv(),
+		SentryDSN:      os.Getenv("SENTRY_DSN"),
+		Environment:    getenv("SENTRY_ENVIRONMENT", getenv("APP_ENV", "production")),
+		Release:        os.Getenv("SENTRY_RELEASE"),
+		LogLevel:       strings.ToLower(getenv("LOG_LEVEL", "info")),
 	}
+}
+
+func initSentry(cfg config) bool {
+	if strings.TrimSpace(cfg.SentryDSN) == "" {
+		return false
+	}
+
+	if err := sentry.Init(sentry.ClientOptions{
+		Dsn:         cfg.SentryDSN,
+		Environment: cfg.Environment,
+		Release:     cfg.Release,
+	}); err != nil {
+		log.Printf("sentry init failed: %v", err)
+		return false
+	}
+
+	return true
 }
 
 func uploadStore(cfg config) (projects.AssetStore, error) {
@@ -383,6 +422,78 @@ func withCommonHeaders(next http.Handler, clientOrigins []string) http.Handler {
 			}
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(status int) {
+	if r.status == 0 {
+		r.status = status
+	}
+	r.ResponseWriter.WriteHeader(status)
+}
+
+func (r *statusRecorder) Write(body []byte) (int, error) {
+	if r.status == 0 {
+		r.status = http.StatusOK
+	}
+	return r.ResponseWriter.Write(body)
+}
+
+func withRequestMonitoring(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		startedAt := time.Now()
+		requestID := requestIDFromRequest(r)
+		w.Header().Set("X-Request-ID", requestID)
+
+		recorder := &statusRecorder{ResponseWriter: w}
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				err := fmt.Errorf("panic: %v", recovered)
+				captureRequestException(r, requestID, http.StatusInternalServerError, err)
+				log.Printf("request_id=%s method=%s path=%s status=%d duration_ms=%d panic=%v", requestID, r.Method, r.URL.Path, http.StatusInternalServerError, time.Since(startedAt).Milliseconds(), recovered)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+		}()
+
+		next.ServeHTTP(recorder, r)
+		status := recorder.status
+		if status == 0 {
+			status = http.StatusOK
+		}
+		duration := time.Since(startedAt)
+		log.Printf("request_id=%s method=%s path=%s status=%d duration_ms=%d remote_addr=%s", requestID, r.Method, r.URL.Path, status, duration.Milliseconds(), r.RemoteAddr)
+
+		if status >= http.StatusInternalServerError {
+			captureRequestException(r, requestID, status, fmt.Errorf("request failed with status %d", status))
+		}
+	})
+}
+
+func requestIDFromRequest(r *http.Request) string {
+	if requestID := strings.TrimSpace(r.Header.Get("X-Request-ID")); requestID != "" {
+		return requestID
+	}
+	nextID := atomic.AddUint64(&requestIDCounter, 1)
+	return fmt.Sprintf("%d-%d", time.Now().UnixNano(), nextID)
+}
+
+func captureRequestException(r *http.Request, requestID string, status int, err error) {
+	if sentry.CurrentHub().Client() == nil {
+		return
+	}
+
+	sentry.WithScope(func(scope *sentry.Scope) {
+		scope.SetTag("request_id", requestID)
+		scope.SetTag("method", r.Method)
+		scope.SetTag("path", r.URL.Path)
+		scope.SetTag("status", strconv.Itoa(status))
+		scope.SetRequest(r)
+		sentry.CaptureException(err)
 	})
 }
 
