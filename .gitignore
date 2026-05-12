@@ -31,4 +31,5 @@ app/public/assets/icons/
 skills/
 
 # Local scripts
-/scripts/
+/scripts/*
+!/scripts/deploy-production.sh
