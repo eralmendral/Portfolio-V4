@@ -1,0 +1,68 @@
+<aside class="LinkRail">
+  <nav class="SectionTimeline" aria-label="Site sections">
+    @for (link of sectionLinks; track link.route) {
+      <a
+        class="TimelineLink"
+        routerLinkActive="TimelineLinkActive"
+        [routerLinkActiveOptions]="{ exact: true }"
+        [routerLink]="link.route"
+      >
+        <span class="TimelineIcon" aria-hidden="true">
+          <hugeicons-icon
+            [icon]="link.icon"
+            [size]="13"
+            color="currentColor"
+            [strokeWidth]="2.25"
+          />
+        </span>
+        <span class="RailLabel">{{ link.title }}</span>
+      </a>
+    }
+  </nav>
+</aside>
+
+<aside class="EntertainmentRail">
+  <nav class="SectionTimeline EntertainmentTimeline" aria-label="Entertainment sections">
+    <button
+      class="TimelineLink EntertainmentToggle"
+      type="button"
+      aria-controls="entertainment-links"
+      [attr.aria-expanded]="showEntertainmentLinks()"
+      [class.TimelineLinkActive]="entertainmentActive()"
+      (click)="toggleEntertainment()"
+    >
+      <span class="TimelineIcon" aria-hidden="true">
+        <hugeicons-icon
+          [icon]="entertainmentToggle.icon"
+          [size]="13"
+          color="currentColor"
+          [strokeWidth]="2.25"
+        />
+      </span>
+      <span class="RailLabel">{{ entertainmentToggle.title }}</span>
+    </button>
+
+    @if (showEntertainmentLinks()) {
+      <div id="entertainment-links" class="EntertainmentLinks">
+        @for (link of entertainmentLinks; track link.route) {
+          <a
+            class="TimelineLink"
+            routerLinkActive="TimelineLinkActive"
+            [routerLinkActiveOptions]="{ exact: true }"
+            [routerLink]="link.route"
+          >
+            <span class="TimelineIcon" aria-hidden="true">
+              <hugeicons-icon
+                [icon]="link.icon"
+                [size]="13"
+                color="currentColor"
+                [strokeWidth]="2.25"
+              />
+            </span>
+            <span class="RailLabel">{{ link.title }}</span>
+          </a>
+        }
+      </div>
+    }
+  </nav>
+</aside>

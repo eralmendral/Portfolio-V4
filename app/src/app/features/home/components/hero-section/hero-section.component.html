@@ -1,0 +1,49 @@
+<section class="HeroSection" aria-label="Profile introduction">
+  <div class="HeroLayout">
+    <div class="HeroContent">
+      <img
+        class="BrandLogo"
+        [ngSrc]="logoPath()"
+        width="1024"
+        height="1024"
+        alt=""
+        priority
+      >
+
+      <div class="HeroCopy">
+        <h1>{{ title() }}</h1>
+        <p class="Lead">{{ introduction() }}</p>
+      </div>
+
+      <nav class="HeroLinks HeroExternalLinks" aria-label="External links" aria-live="polite">
+        @if (loadingExternalLinks()) {
+          <span class="ScreenReaderOnly">Loading external links</span>
+        } @else if (externalLinks().length) {
+          @for (link of externalLinks(); track link.id) {
+            <a
+              class="HeroLink HeroExternalLink"
+              [href]="link.url"
+              target="_blank"
+              rel="noreferrer"
+              [attr.aria-label]="link.label + ' opens in a new tab'"
+            >
+              <span class="HeroLinkIcon" aria-hidden="true">
+                <hugeicons-icon
+                  [icon]="link.icon"
+                  [size]="30"
+                  color="currentColor"
+                  [strokeWidth]="2.3"
+                />
+              </span>
+              <span>{{ link.label }}</span>
+            </a>
+          }
+        } @else if (externalLinksLoadFailed()) {
+          <button class="HeroLink InlineRetry" type="button" (click)="reloadLinks()">
+            Reload links
+          </button>
+        }
+      </nav>
+    </div>
+  </div>
+</section>

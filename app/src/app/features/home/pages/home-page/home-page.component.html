@@ -1,0 +1,11 @@
+<main class="PageRoot">
+  <app-hero-section
+    [title]="title()"
+    [introduction]="introduction()"
+    [logoPath]="theme.logoPath()"
+    [externalLinks]="centerLinks()"
+    [loadingExternalLinks]="linksResource.isLoading()"
+    [externalLinksLoadFailed]="linksLoadFailed()"
+    (reloadExternalLinks)="linksResource.reload()"
+  />
+</main>

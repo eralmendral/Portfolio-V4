@@ -21,12 +21,14 @@ ADMIN_PASSWORD=change-me
 JWT_SECRET=replace-with-a-long-random-secret
 ```
 
-For the local Lynx web admin client, allow browser requests from the Rspeedy
+For the local Angular web admin app, allow browser requests from the Angular
 dev server:
 
 ```sh
-CLIENT_ORIGIN=http://localhost:3000
+CLIENT_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 ```
+
+`CLIENT_ORIGIN` is still supported for a single allowed origin.
 
 ## Docker
 
@@ -39,7 +41,7 @@ docker compose up --build
 The API listens on `http://localhost:8080`, and PostgreSQL is exposed on
 `localhost:5433` by default to avoid conflicts with a local Postgres instance.
 Set `POSTGRES_HOST_PORT=5432` if you want Compose to bind host port `5432`.
-Project, certificate, article, work experience, skill, link, tool, product, and intro
+Project, certificate, article, work experience, skill, link, tool, music, series, games, product, and intro
 rows are stored in the `postgres-data` Docker volume. Uploaded local files are
 stored in the `uploads` Docker volume.
 
@@ -53,12 +55,12 @@ Run PostgreSQL with Docker Compose and the API with Go:
 
 The script starts the Compose `postgres` service, sets local development
 defaults, and runs `go run .`. It uses `POSTGRES_HOST_PORT=5433` and
-`CLIENT_ORIGIN=http://localhost:3000` by default.
+`CLIENT_ORIGINS=http://localhost:4200,http://127.0.0.1:4200` by default.
 
 ## Sample Data
 
 Seed sample projects, certificates, articles, work experiences, skills, links,
-tools, products, and intro content into the local PostgreSQL database:
+tools, music, series, games, products, and intro content into the local PostgreSQL database:
 
 ```sh
 ./scripts/seed-sample-data.sh
@@ -67,15 +69,17 @@ tools, products, and intro content into the local PostgreSQL database:
 The seed command replaces only the sample rows by their stable IDs/slugs,
 sample article IDs, sample work experience IDs/slugs, sample skill
 IDs/categories, sample link IDs, sample tool IDs, sample product IDs/slugs, the
-products section settings row, and the singleton intro row. It does not wipe
+sample music IDs, sample series IDs, sample game IDs, sample product IDs/slugs,
+the products section settings row, and the singleton intro row. It does not wipe
 other projects, certificates, articles, work experiences, skills, links, tools,
-or products. Each seeded collection is capped at three sample records.
+music, series, games, or products. Each seeded collection is capped by the seed command's
+sample limit.
 
 ## Postman
 
 Import `postman/portfolio-server.postman_collection.json` into Postman. Run the
 `Auth / Login` request first; it stores the JWT in the collection variables for
-the protected project, certificate, article, skill, link, tool, product, and intro
+the protected project, certificate, article, skill, link, tool, music, series, games, product, and intro
 requests.
 
 Local development uploads use server disk by default:
@@ -108,7 +112,7 @@ image upload routes.
 ## Endpoints
 
 Read endpoints are public for projects, certificates, links, work experiences,
-skill categories, skills, tools, daily progress, products, the products section
+skill categories, skills, tools, music, series, games, daily progress, products, the products section
 settings, and intro. Public product list/detail reads return published products only;
 authenticated product reads can manage all statuses. All article routes plus
 create, update, delete, and upload routes require `Authorization: Bearer <jwt>`.
@@ -140,6 +144,24 @@ GET    /tools/{id}
 PATCH  /tools/{id}
 PUT    /tools/{id}
 DELETE /tools/{id}
+GET    /music
+POST   /music
+GET    /music/{id}
+PATCH  /music/{id}
+PUT    /music/{id}
+DELETE /music/{id}
+GET    /series
+POST   /series
+GET    /series/{id}
+PATCH  /series/{id}
+PUT    /series/{id}
+DELETE /series/{id}
+GET    /games
+POST   /games
+GET    /games/{id}
+PATCH  /games/{id}
+PUT    /games/{id}
+DELETE /games/{id}
 GET    /daily-progress
 POST   /daily-progress
 GET    /daily-progress/{id-or-date}

@@ -15,11 +15,15 @@ import (
 	"github.com/eralme/server/internal/articles"
 	"github.com/eralme/server/internal/auth"
 	"github.com/eralme/server/internal/certificates"
+	"github.com/eralme/server/internal/contact"
 	"github.com/eralme/server/internal/dailyprogress"
+	"github.com/eralme/server/internal/games"
 	"github.com/eralme/server/internal/intro"
 	"github.com/eralme/server/internal/links"
+	"github.com/eralme/server/internal/music"
 	"github.com/eralme/server/internal/products"
 	"github.com/eralme/server/internal/projects"
+	"github.com/eralme/server/internal/series"
 	"github.com/eralme/server/internal/skills"
 	"github.com/eralme/server/internal/tools"
 	"github.com/eralme/server/internal/workexperience"
@@ -45,7 +49,7 @@ type config struct {
 	AdminUsername  string
 	AdminPassword  string
 	MaxUploadBytes int64
-	ClientOrigin   string
+	ClientOrigins  []string
 }
 
 func main() {
@@ -95,6 +99,21 @@ func main() {
 		log.Fatal(err)
 	}
 
+	musicStore, err := music.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	seriesStore, err := series.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gameStore, err := games.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	dailyProgressStore, err := dailyprogress.NewPostgresStore(startupCtx, db)
 	if err != nil {
 		log.Fatal(err)
@@ -109,8 +128,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	contactStore, err := contact.NewPostgresStore(startupCtx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	router, err := buildRouter(cfg, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, dailyProgressStore, productStore, introStore)
+	router, err := buildRouter(cfg, projectStore, certificateStore, articleStore, workExperienceStore, linkStore, skillStore, toolStore, musicStore, seriesStore, gameStore, dailyProgressStore, productStore, introStore, contactStore)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -127,7 +150,7 @@ func main() {
 	}
 }
 
-func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, dailyProgressStore dailyprogress.Store, productStore products.Store, introStore intro.Store) (http.Handler, error) {
+func buildRouter(cfg config, projectStore projects.Store, certificateStore certificates.Store, articleStore articles.Store, workExperienceStore workexperience.Store, linkStore links.Store, skillStore skills.Store, toolStore tools.Store, musicStore music.Store, seriesStore series.Store, gameStore games.Store, dailyProgressStore dailyprogress.Store, productStore products.Store, introStore intro.Store, contactStore contact.Store) (http.Handler, error) {
 	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTIssuer, cfg.TokenTTL)
 
 	assetStore, err := uploadStore(cfg)
@@ -148,12 +171,16 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	linkHandler := links.NewHandler(linkStore)
 	skillHandler := skills.NewHandler(skillStore)
 	toolHandler := tools.NewHandler(toolStore)
+	musicHandler := music.NewHandler(musicStore)
+	seriesHandler := series.NewHandler(seriesStore)
+	gameHandler := games.NewHandler(gameStore)
 	dailyProgressHandler := dailyprogress.NewHandler(dailyProgressStore)
 	productHandler := products.NewHandler(productStore)
 	introHandler := intro.NewHandler(introStore, intro.UploadConfig{
 		Store:    assetStore,
 		MaxBytes: cfg.MaxUploadBytes,
 	})
+	contactHandler := contact.NewHandler(contactStore)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -213,6 +240,24 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	mux.Handle("PATCH /tools/", requireJWT(http.HandlerFunc(toolHandler.HandleItem)))
 	mux.Handle("PUT /tools/", requireJWT(http.HandlerFunc(toolHandler.HandleItem)))
 	mux.Handle("DELETE /tools/", requireJWT(http.HandlerFunc(toolHandler.HandleItem)))
+	mux.Handle("GET /music", http.HandlerFunc(musicHandler.HandleCollection))
+	mux.Handle("POST /music", requireJWT(http.HandlerFunc(musicHandler.HandleCollection)))
+	mux.Handle("GET /music/", http.HandlerFunc(musicHandler.HandleItem))
+	mux.Handle("PATCH /music/", requireJWT(http.HandlerFunc(musicHandler.HandleItem)))
+	mux.Handle("PUT /music/", requireJWT(http.HandlerFunc(musicHandler.HandleItem)))
+	mux.Handle("DELETE /music/", requireJWT(http.HandlerFunc(musicHandler.HandleItem)))
+	mux.Handle("GET /series", http.HandlerFunc(seriesHandler.HandleCollection))
+	mux.Handle("POST /series", requireJWT(http.HandlerFunc(seriesHandler.HandleCollection)))
+	mux.Handle("GET /series/", http.HandlerFunc(seriesHandler.HandleItem))
+	mux.Handle("PATCH /series/", requireJWT(http.HandlerFunc(seriesHandler.HandleItem)))
+	mux.Handle("PUT /series/", requireJWT(http.HandlerFunc(seriesHandler.HandleItem)))
+	mux.Handle("DELETE /series/", requireJWT(http.HandlerFunc(seriesHandler.HandleItem)))
+	mux.Handle("GET /games", http.HandlerFunc(gameHandler.HandleCollection))
+	mux.Handle("POST /games", requireJWT(http.HandlerFunc(gameHandler.HandleCollection)))
+	mux.Handle("GET /games/", http.HandlerFunc(gameHandler.HandleItem))
+	mux.Handle("PATCH /games/", requireJWT(http.HandlerFunc(gameHandler.HandleItem)))
+	mux.Handle("PUT /games/", requireJWT(http.HandlerFunc(gameHandler.HandleItem)))
+	mux.Handle("DELETE /games/", requireJWT(http.HandlerFunc(gameHandler.HandleItem)))
 	mux.Handle("GET /daily-progress", http.HandlerFunc(dailyProgressHandler.HandleCollection))
 	mux.Handle("POST /daily-progress", requireJWT(http.HandlerFunc(dailyProgressHandler.HandleCollection)))
 	mux.Handle("GET /daily-progress/", http.HandlerFunc(dailyProgressHandler.HandleItem))
@@ -233,12 +278,16 @@ func buildRouter(cfg config, projectStore projects.Store, certificateStore certi
 	mux.Handle("DELETE /intro", requireJWT(http.HandlerFunc(introHandler.Handle)))
 	mux.Handle("POST /intro/profile-picture", requireJWT(http.HandlerFunc(introHandler.HandleProfilePicture)))
 	mux.Handle("DELETE /intro/profile-picture", requireJWT(http.HandlerFunc(introHandler.HandleProfilePicture)))
+	mux.Handle("GET /contact-profile", http.HandlerFunc(contactHandler.HandleProfile))
+	mux.Handle("PATCH /contact-profile", requireJWT(http.HandlerFunc(contactHandler.HandleProfile)))
+	mux.Handle("PUT /contact-profile", requireJWT(http.HandlerFunc(contactHandler.HandleProfile)))
+	mux.Handle("POST /contact-submissions", http.HandlerFunc(contactHandler.HandleCollection))
 
 	if cfg.UploadStorage == "local" && cfg.UploadDir != "" {
 		mux.Handle("/uploads/projects/", http.StripPrefix("/uploads/projects/", http.FileServer(http.Dir(cfg.UploadDir))))
 	}
 
-	return withCommonHeaders(mux, cfg.ClientOrigin), nil
+	return withCommonHeaders(mux, cfg.ClientOrigins), nil
 }
 
 func openDatabase(ctx context.Context, databaseURL string) (*sql.DB, error) {
@@ -284,7 +333,7 @@ func loadConfig() config {
 		AdminUsername:  os.Getenv("ADMIN_USERNAME"),
 		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
 		MaxUploadBytes: int64FromEnv("MAX_UPLOAD_BYTES", 300<<20),
-		ClientOrigin:   os.Getenv("CLIENT_ORIGIN"),
+		ClientOrigins:  clientOriginsFromEnv(),
 	}
 }
 
@@ -311,13 +360,22 @@ func uploadStore(cfg config) (projects.AssetStore, error) {
 	}
 }
 
-func withCommonHeaders(next http.Handler, clientOrigin string) http.Handler {
+func withCommonHeaders(next http.Handler, clientOrigins []string) http.Handler {
+	allowedOrigins := make(map[string]struct{}, len(clientOrigins))
+	for _, origin := range clientOrigins {
+		if normalized := normalizeOrigin(origin); normalized != "" {
+			allowedOrigins[normalized] = struct{}{}
+		}
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		if clientOrigin != "" && r.Header.Get("Origin") == clientOrigin {
-			w.Header().Set("Access-Control-Allow-Origin", clientOrigin)
+		origin := normalizeOrigin(r.Header.Get("Origin"))
+		if _, ok := allowedOrigins[origin]; ok {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept")
+			w.Header().Set("Access-Control-Max-Age", "600")
 			w.Header().Set("Vary", "Origin")
 			if r.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusNoContent)
@@ -326,6 +384,30 @@ func withCommonHeaders(next http.Handler, clientOrigin string) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func clientOriginsFromEnv() []string {
+	values := []string{os.Getenv("CLIENT_ORIGINS"), os.Getenv("CLIENT_ORIGIN")}
+	origins := make([]string, 0, 2)
+	seen := make(map[string]struct{})
+	for _, value := range values {
+		for _, origin := range strings.Split(value, ",") {
+			normalized := normalizeOrigin(origin)
+			if normalized == "" {
+				continue
+			}
+			if _, ok := seen[normalized]; ok {
+				continue
+			}
+			seen[normalized] = struct{}{}
+			origins = append(origins, normalized)
+		}
+	}
+	return origins
+}
+
+func normalizeOrigin(origin string) string {
+	return strings.TrimRight(strings.TrimSpace(origin), "/")
 }
 
 func getenv(key string, fallback string) string {

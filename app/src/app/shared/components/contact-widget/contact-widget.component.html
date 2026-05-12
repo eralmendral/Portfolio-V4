@@ -1,0 +1,92 @@
+<button
+  class="ContactTrigger"
+  type="button"
+  aria-label="Open contact form"
+  aria-controls="contact-panel"
+  [attr.aria-expanded]="isOpen()"
+  (click)="togglePanel()"
+>
+  <hugeicons-icon
+    [icon]="contactIcon"
+    [size]="24"
+    color="currentColor"
+    [strokeWidth]="2.35"
+  />
+</button>
+
+@if (isOpen()) {
+  <section
+    id="contact-panel"
+    class="ContactPanel"
+    role="dialog"
+    aria-labelledby="contact-title"
+  >
+    <button class="ContactClose" type="button" aria-label="Close contact form" (click)="closePanel()">
+      <hugeicons-icon
+        [icon]="closeIcon"
+        [size]="20"
+        color="currentColor"
+        [strokeWidth]="2.25"
+      />
+    </button>
+
+    <div class="ContactCopy">
+      <p class="ContactEyebrow">Contact</p>
+      <h2 id="contact-title">Send a message</h2>
+    </div>
+
+    @if (contactProfile(); as profile) {
+      <address class="ContactDetails">
+        <a [href]="'mailto:' + profile.work_email">{{ profile.work_email }}</a>
+        <a [href]="phoneHref(profile.phone_number)">{{ profile.phone_number }}</a>
+      </address>
+    }
+
+    <form class="ContactForm" [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        <span>Name</span>
+        <input type="text" autocomplete="name" formControlName="name">
+      </label>
+      @if (form.controls.name.invalid && form.controls.name.touched) {
+        <p class="FieldError">Name is required.</p>
+      }
+
+      <label>
+        <span>Email</span>
+        <input type="email" autocomplete="email" formControlName="email">
+      </label>
+      @if (form.controls.email.invalid && form.controls.email.touched) {
+        <p class="FieldError">Enter a valid email address.</p>
+      }
+
+      <label>
+        <span>Subject</span>
+        <input type="text" autocomplete="off" formControlName="subject">
+      </label>
+
+      <label>
+        <span>Message</span>
+        <textarea rows="4" formControlName="message"></textarea>
+      </label>
+      @if (form.controls.message.invalid && form.controls.message.touched) {
+        <p class="FieldError">Message must be at least 10 characters.</p>
+      }
+
+      @if (submitError(); as error) {
+        <p class="FormStatus FormError">{{ error }}</p>
+      } @else if (submitSuccess()) {
+        <p class="FormStatus">Message sent.</p>
+      }
+
+      <button class="ContactSubmit" type="submit" [disabled]="form.invalid || isSubmitting()">
+        <hugeicons-icon
+          [icon]="sendIcon"
+          [size]="19"
+          color="currentColor"
+          [strokeWidth]="2.25"
+        />
+        <span>{{ isSubmitting() ? 'Sending' : 'Send' }}</span>
+      </button>
+    </form>
+  </section>
+}

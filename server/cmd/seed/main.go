@@ -11,10 +11,14 @@ import (
 
 	"github.com/eralme/server/internal/articles"
 	"github.com/eralme/server/internal/certificates"
+	"github.com/eralme/server/internal/contact"
+	"github.com/eralme/server/internal/games"
 	"github.com/eralme/server/internal/intro"
 	"github.com/eralme/server/internal/links"
+	"github.com/eralme/server/internal/music"
 	"github.com/eralme/server/internal/products"
 	"github.com/eralme/server/internal/projects"
+	"github.com/eralme/server/internal/series"
 	"github.com/eralme/server/internal/skills"
 	"github.com/eralme/server/internal/tools"
 	"github.com/eralme/server/internal/workexperience"
@@ -70,6 +74,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("migrate tools postgres: %v", err)
 	}
+	musicStore, err := music.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate music postgres: %v", err)
+	}
+	seriesStore, err := series.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate series postgres: %v", err)
+	}
+	gameStore, err := games.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate games postgres: %v", err)
+	}
 	productStore, err := products.NewPostgresStore(ctx, db)
 	if err != nil {
 		log.Fatalf("migrate products postgres: %v", err)
@@ -77,6 +93,10 @@ func main() {
 	introStore, err := intro.NewPostgresStore(ctx, db)
 	if err != nil {
 		log.Fatalf("migrate intro postgres: %v", err)
+	}
+	contactStore, err := contact.NewPostgresStore(ctx, db)
+	if err != nil {
+		log.Fatalf("migrate contact postgres: %v", err)
 	}
 
 	projectSamples := sampleProjects()
@@ -181,6 +201,39 @@ func main() {
 		}
 	}
 
+	musicSamples := sampleMusic()
+	validateSampleLimit("music", len(musicSamples))
+	for _, entry := range musicSamples {
+		if err := deleteMusicIfExists(ctx, musicStore, entry.ID); err != nil {
+			log.Fatalf("delete music sample %q: %v", entry.ID, err)
+		}
+		if _, err := musicStore.Create(ctx, entry); err != nil {
+			log.Fatalf("create music sample %q: %v", entry.ID, err)
+		}
+	}
+
+	seriesSamples := sampleSeries()
+	validateSampleLimit("series", len(seriesSamples))
+	for _, entry := range seriesSamples {
+		if err := deleteSeriesIfExists(ctx, seriesStore, entry.ID); err != nil {
+			log.Fatalf("delete series sample %q: %v", entry.ID, err)
+		}
+		if _, err := seriesStore.Create(ctx, entry); err != nil {
+			log.Fatalf("create series sample %q: %v", entry.ID, err)
+		}
+	}
+
+	gameSamples := sampleGames()
+	validateSampleLimit("games", len(gameSamples))
+	for _, entry := range gameSamples {
+		if err := deleteGameIfExists(ctx, gameStore, entry.ID); err != nil {
+			log.Fatalf("delete game sample %q: %v", entry.ID, err)
+		}
+		if _, err := gameStore.Create(ctx, entry); err != nil {
+			log.Fatalf("create game sample %q: %v", entry.ID, err)
+		}
+	}
+
 	productSamples := sampleProducts()
 	validateSampleLimit("products", len(productSamples))
 	for _, product := range productSamples {
@@ -208,7 +261,12 @@ func main() {
 		log.Fatalf("save intro sample: %v", err)
 	}
 
-	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample products, products section, and intro\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(productSamples))
+	contactProfileSample := sampleContactProfile()
+	if _, err := contactStore.SaveProfile(ctx, contactProfileSample); err != nil {
+		log.Fatalf("save contact profile sample: %v", err)
+	}
+
+	fmt.Printf("seeded %d sample projects, %d sample certificates, %d sample articles, %d sample work experiences, %d sample skill categories, %d sample skills, %d sample links, %d sample tools, %d sample music entries, %d sample series entries, %d sample games, %d sample products, products section, intro, and contact profile\n", len(projectSamples), len(certificateSamples), len(articleSamples), len(workExperienceSamples), len(skillCategorySamples), len(skillSamples), len(linkSamples), len(toolSamples), len(musicSamples), len(seriesSamples), len(gameSamples), len(productSamples))
 }
 
 func validateSampleLimit(name string, count int) {
@@ -281,6 +339,30 @@ func deleteToolIfExists(ctx context.Context, store tools.Store, id string) error
 	return err
 }
 
+func deleteMusicIfExists(ctx context.Context, store music.Store, id string) error {
+	err := store.Delete(ctx, id)
+	if errors.Is(err, music.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteSeriesIfExists(ctx context.Context, store series.Store, id string) error {
+	err := store.Delete(ctx, id)
+	if errors.Is(err, series.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
+func deleteGameIfExists(ctx context.Context, store games.Store, id string) error {
+	err := store.Delete(ctx, id)
+	if errors.Is(err, games.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
 func deleteProductIfExists(ctx context.Context, store products.Store, idOrSlug string) error {
 	err := store.Delete(ctx, idOrSlug)
 	if errors.Is(err, products.ErrNotFound) {
@@ -297,10 +379,10 @@ func sampleProjects() []projects.Project {
 		{
 			ID:          "sample-portfolio-api-server",
 			Slug:        "portfolio-api-server",
-			Title:       "Portfolio API Server",
-			Summary:     "A Go API for managing portfolio projects, images, and publishing state.",
+			Title:       "Content API Server",
+			Summary:     "A Go API for managing projects, images, and publishing state.",
 			Description: "Backend service with JWT-protected project management, PostgreSQL storage, and local or Spaces-backed image uploads.",
-			Body:        "This sample demonstrates a production-oriented portfolio API with persistent project records, image metadata, and Docker-based local development.",
+			Body:        "This sample demonstrates a production-oriented content API with persistent project records, image metadata, and Docker-based local development.",
 			TechStack: []string{
 				"Go",
 				"PostgreSQL",
@@ -309,13 +391,13 @@ func sampleProjects() []projects.Project {
 			Tags: []string{
 				"backend",
 				"api",
-				"portfolio",
+				"content",
 			},
 			MainImage: &projects.ProjectImage{
 				ID:         "sample-portfolio-api-main",
 				URL:        "https://picsum.photos/seed/portfolio-api/1200/800",
 				AltText:    "Abstract server dashboard preview",
-				Caption:    "Portfolio API server overview",
+				Caption:    "Content API server overview",
 				SortOrder:  0,
 				UploadedAt: firstPublishedAt,
 			},
@@ -329,7 +411,7 @@ func sampleProjects() []projects.Project {
 					UploadedAt: firstPublishedAt,
 				},
 			},
-			GitHubURL:   "https://github.com/eralmendral/Portfolio-V4",
+			GitHubURL:   "https://github.com/eralmendral",
 			DemoURL:     "https://example.com/portfolio-api-server",
 			Featured:    true,
 			SortOrder:   10,
@@ -340,9 +422,9 @@ func sampleProjects() []projects.Project {
 		{
 			ID:          "sample-portfolio-admin-dashboard",
 			Slug:        "portfolio-admin-dashboard",
-			Title:       "Portfolio Admin Dashboard",
+			Title:       "Admin Dashboard",
 			Summary:     "An admin interface concept for curating featured work and project media.",
-			Description: "Sample project data for testing list, search, update, and image-management flows in the portfolio API.",
+			Description: "Sample project data for testing list, search, update, and image-management flows in the content API.",
 			Body:        "This seeded project gives Postman and local UI tests a second realistic record with different tags, status, and metadata.",
 			TechStack: []string{
 				"React",
@@ -358,7 +440,7 @@ func sampleProjects() []projects.Project {
 				ID:         "sample-admin-dashboard-main",
 				URL:        "https://picsum.photos/seed/admin-dashboard/1200/800",
 				AltText:    "Admin dashboard project preview",
-				Caption:    "Portfolio admin dashboard",
+				Caption:    "Admin dashboard",
 				SortOrder:  0,
 				UploadedAt: secondPublishedAt,
 			},
@@ -372,7 +454,7 @@ func sampleProjects() []projects.Project {
 					UploadedAt: secondPublishedAt,
 				},
 			},
-			GitHubURL:   "https://github.com/eralmendral/Portfolio-V4",
+			GitHubURL:   "https://github.com/eralmendral",
 			DemoURL:     "https://example.com/portfolio-admin-dashboard",
 			Featured:    false,
 			SortOrder:   20,
@@ -413,7 +495,7 @@ func sampleCertificates() []certificates.Certificate {
 			ID:            "sample-cloud-deployment-certificate",
 			Slug:          "cloud-deployment-certificate",
 			Title:         "Cloud Deployment Certificate",
-			Issuer:        "Portfolio Labs",
+			Issuer:        "Release Labs",
 			Summary:       "Credential for Docker-based app and database deployments.",
 			Description:   "Demonstrates container orchestration, environment configuration, persistent database volumes, and operational checks.",
 			CredentialURL: "https://example.com/certificates/cloud-deployment-certificate",
@@ -440,10 +522,10 @@ func sampleArticles() []articles.Article {
 	return []articles.Article{
 		{
 			ID:            "sample-devto-go-api-routing",
-			Title:         "Routing Patterns for Go Portfolio APIs",
+			Title:         "Routing Patterns for Go APIs",
 			URL:           "https://dev.to/example/routing-patterns-for-go-portfolio-apis",
 			Source:        "Dev.to",
-			Summary:       "A practical walkthrough of organizing authenticated CRUD routes in a Go portfolio backend.",
+			Summary:       "A practical walkthrough of organizing authenticated CRUD routes in a Go backend.",
 			CoverImageURL: "https://picsum.photos/seed/devto-go-api-routing/1200/630",
 			Featured:      true,
 			SortOrder:     10,
@@ -453,7 +535,7 @@ func sampleArticles() []articles.Article {
 		},
 		{
 			ID:            "sample-medium-portfolio-content-models",
-			Title:         "Content Models for Portfolio Preview Cards",
+			Title:         "Content Models for Preview Cards",
 			URL:           "https://medium.com/example/content-models-for-portfolio-preview-cards",
 			Source:        "Medium",
 			Summary:       "How lightweight metadata can power reusable project, certificate, and article previews.",
@@ -484,15 +566,15 @@ func sampleWorkExperiences() []workexperience.WorkExperience {
 			EmploymentType: "Full-time",
 			Location:       "Manila, Philippines",
 			LocationType:   "Remote",
-			Summary:        "Builds portfolio APIs, admin workflows, and content-management tools with practical deployment paths.",
-			Description:    "Owns backend modeling, authenticated CRUD APIs, upload flows, and frontend integration details for portfolio operations.",
+			Summary:        "Builds APIs, admin workflows, and content-management tools with practical deployment paths.",
+			Description:    "Owns backend modeling, authenticated CRUD APIs, upload flows, and frontend integration details for content operations.",
 			Highlights: []string{
-				"Shipped PostgreSQL-backed portfolio content APIs.",
+				"Shipped PostgreSQL-backed content APIs.",
 				"Improved admin publishing workflows with focused validation and tests.",
 			},
 			Responsibilities: []string{
 				"Design and implement Go HTTP APIs.",
-				"Model portfolio content data and persistence behavior.",
+				"Model content data and persistence behavior.",
 				"Review frontend data contracts and operational workflows.",
 			},
 			TechStack: []string{
@@ -565,7 +647,7 @@ func sampleSkillCategories() []skills.SkillCategory {
 			Slug:        "backend-engineering",
 			Name:        "Backend Engineering",
 			Description: "API design, Go services, authentication, and relational data modeling.",
-			IconClass:   "lucide-server",
+			IconClass:   "hugeicons-pro:server-stack-01",
 			SortOrder:   10,
 			Status:      skills.StatusPublished,
 			CreatedAt:   createdAt,
@@ -575,7 +657,7 @@ func sampleSkillCategories() []skills.SkillCategory {
 			Slug:        "frontend-engineering",
 			Name:        "Frontend Engineering",
 			Description: "React, TypeScript, accessible forms, and responsive admin interfaces.",
-			IconClass:   "lucide-monitor",
+			IconClass:   "hugeicons-pro:web-design-01",
 			SortOrder:   20,
 			Status:      skills.StatusPublished,
 			CreatedAt:   createdAt,
@@ -585,7 +667,7 @@ func sampleSkillCategories() []skills.SkillCategory {
 			Slug:        "cloud-devops",
 			Name:        "Cloud & DevOps",
 			Description: "Containerized local workflows, cloud storage, deployment, and CI checks.",
-			IconClass:   "lucide-cloud",
+			IconClass:   "hugeicons-pro:cloud-server",
 			SortOrder:   30,
 			Status:      skills.StatusPublished,
 			CreatedAt:   createdAt,
@@ -638,7 +720,7 @@ func sampleLinks() []links.Link {
 			ID:        "sample-link-github",
 			Label:     "GitHub",
 			URL:       "https://github.com/eralmendral",
-			IconClass: "fa-brands fa-github",
+			IconClass: "hugeicons-pro:github",
 			SortOrder: 10,
 			Star:      true,
 			Status:    links.StatusPublished,
@@ -648,17 +730,17 @@ func sampleLinks() []links.Link {
 			ID:        "sample-link-linkedin",
 			Label:     "LinkedIn",
 			URL:       "https://www.linkedin.com/in/eralmendral",
-			IconClass: "fa-brands fa-linkedin",
+			IconClass: "hugeicons-pro:linkedin-01",
 			SortOrder: 20,
-			Star:      true,
+			Star:      false,
 			Status:    links.StatusPublished,
 			CreatedAt: createdAt,
 		},
 		{
 			ID:        "sample-link-resume",
 			Label:     "Resume",
-			URL:       "https://example.com/resume.pdf",
-			IconClass: "fa-solid fa-file-lines",
+			URL:       "/assets/cv.pdf",
+			IconClass: "hugeicons-pro:file-star",
 			SortOrder: 30,
 			Star:      true,
 			Status:    links.StatusPublished,
@@ -676,7 +758,7 @@ func sampleTools() []tools.Tool {
 			Name:      "Codex",
 			Category:  "AI & Coding Assistants",
 			Summary:   "Agentic coding workflow for implementing, testing, and reviewing repository changes.",
-			IconClass: "lucide-bot",
+			IconClass: "hugeicons-pro:bot",
 			Tags: []string{
 				"ai",
 				"coding",
@@ -692,7 +774,7 @@ func sampleTools() []tools.Tool {
 			Name:      "Claude",
 			Category:  "AI & Coding Assistants",
 			Summary:   "AI assistant for reasoning, drafting, coding support, and technical exploration.",
-			IconClass: "lucide-sparkles",
+			IconClass: "hugeicons-pro:sparkles",
 			Tags: []string{
 				"ai",
 				"assistant",
@@ -708,7 +790,7 @@ func sampleTools() []tools.Tool {
 			Name:      "OpenCode",
 			Category:  "AI & Coding Assistants",
 			Summary:   "Terminal-based AI coding workflow for codebase edits and review loops.",
-			IconClass: "lucide-terminal",
+			IconClass: "hugeicons-pro:terminal",
 			Tags: []string{
 				"ai",
 				"terminal",
@@ -724,7 +806,7 @@ func sampleTools() []tools.Tool {
 			Name:      "Google Cloud Platform",
 			Category:  "Cloud & DevOps",
 			Summary:   "Cloud platform for deploying, operating, and scaling production services.",
-			IconClass: "lucide-cloud",
+			IconClass: "hugeicons-pro:cloud",
 			Tags: []string{
 				"cloud",
 				"gcp",
@@ -740,7 +822,7 @@ func sampleTools() []tools.Tool {
 			Name:      "Google Artifact Registry",
 			Category:  "Cloud & DevOps",
 			Summary:   "Managed registry for storing and distributing container images and build artifacts.",
-			IconClass: "lucide-package",
+			IconClass: "hugeicons-pro:package",
 			Tags: []string{
 				"registry",
 				"containers",
@@ -756,7 +838,7 @@ func sampleTools() []tools.Tool {
 			Name:      "GitHub Container Registry",
 			Category:  "Cloud & DevOps",
 			Summary:   "Container registry for publishing release images directly from GitHub Actions.",
-			IconClass: "lucide-box",
+			IconClass: "hugeicons-pro:cloud-server",
 			Tags: []string{
 				"registry",
 				"containers",
@@ -766,6 +848,166 @@ func sampleTools() []tools.Tool {
 			Featured:  false,
 			Status:    tools.StatusPublished,
 			CreatedAt: createdAt,
+		},
+	}
+}
+
+func sampleMusic() []music.Music {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []music.Music{
+		{
+			ID:               "sample-music-night-drive",
+			Title:            "Night Drive",
+			Artist:           "Aster",
+			Album:            "Road Notes",
+			SpotifyURL:       "https://open.spotify.com/track/sample-night-drive",
+			YouTubeURL:       "https://www.youtube.com/watch?v=sample-night-drive",
+			MostlyListenedOn: "2026-05-10",
+			Notes:            "A late-night focus track for settling into deep work without losing warmth.",
+			SortOrder:        10,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
+		},
+		{
+			ID:               "sample-music-morning-signal",
+			Title:            "Morning Signal",
+			Artist:           "Beacon",
+			Album:            "Light Map",
+			SpotifyURL:       "https://open.spotify.com/track/sample-morning-signal",
+			MostlyListenedOn: "2026-05-09",
+			Notes:            "The kind of song that makes ordinary routines feel intentional.",
+			SortOrder:        20,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
+		},
+		{
+			ID:               "sample-music-quiet-loop",
+			Title:            "Quiet Loop",
+			Artist:           "Harbor",
+			Album:            "Still Water",
+			YouTubeURL:       "https://www.youtube.com/watch?v=sample-quiet-loop",
+			MostlyListenedOn: "2026-05-08",
+			Notes:            "A calm repeat listen for thinking through hard problems.",
+			SortOrder:        30,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
+		},
+		{
+			ID:               "sample-music-silver-room",
+			Title:            "Silver Room",
+			Artist:           "Kin",
+			Album:            "Interior Weather",
+			SpotifyURL:       "https://open.spotify.com/track/sample-silver-room",
+			MostlyListenedOn: "2026-05-07",
+			Notes:            "A steady listen for design passes and late review sessions.",
+			SortOrder:        40,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
+		},
+		{
+			ID:               "sample-music-last-train-home",
+			Title:            "Last Train Home",
+			Artist:           "Northline",
+			Album:            "Signals",
+			YouTubeURL:       "https://www.youtube.com/watch?v=sample-last-train-home",
+			MostlyListenedOn: "2026-05-06",
+			Notes:            "A clean closer for winding down after a focused build.",
+			SortOrder:        50,
+			Status:           music.StatusPublished,
+			CreatedAt:        createdAt,
+		},
+	}
+}
+
+func sampleSeries() []series.Series {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []series.Series{
+		{
+			ID:              "sample-series-the-long-room",
+			Title:           "The Long Room",
+			Category:        series.CategoryTVSeries,
+			Creator:         "North Studio",
+			Platform:        "StreamBox",
+			WatchURL:        "https://example.com/series/the-long-room",
+			MostlyWatchedOn: "2026-05-10",
+			Notes:           "A quiet favorite about work, friendship, and ordinary courage.",
+			SortOrder:       10,
+			Status:          series.StatusPublished,
+			CreatedAt:       createdAt,
+		},
+		{
+			ID:              "sample-series-moon-harbor",
+			Title:           "Moon Harbor",
+			Category:        series.CategoryAnime,
+			Creator:         "Blue House",
+			Platform:        "Crunchyroll",
+			WatchURL:        "https://example.com/series/moon-harbor",
+			MostlyWatchedOn: "2026-05-09",
+			Notes:           "Soft science fiction with a patient emotional center.",
+			SortOrder:       20,
+			Status:          series.StatusPublished,
+			CreatedAt:       createdAt,
+		},
+		{
+			ID:              "sample-series-home-signals",
+			Title:           "Home Signals",
+			Category:        series.CategoryTVSeries,
+			Creator:         "City Room",
+			Platform:        "StreamBox",
+			WatchURL:        "https://example.com/series/home-signals",
+			MostlyWatchedOn: "2026-05-08",
+			Notes:           "A comfort watch about chosen family and showing up.",
+			SortOrder:       30,
+			Status:          series.StatusPublished,
+			CreatedAt:       createdAt,
+		},
+	}
+}
+
+func sampleGames() []games.Game {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return []games.Game{
+		{
+			ID:             "sample-game-starlit-roads",
+			Title:          "Starlit Roads",
+			Studio:         "North Play",
+			Platform:       "PC",
+			Genre:          "Adventure",
+			StoreURL:       "https://example.com/games/starlit-roads",
+			MostlyPlayedOn: "2026-05-10",
+			Notes:          "A wandering game for decompressing after long days.",
+			SortOrder:      10,
+			Status:         games.StatusPublished,
+			CreatedAt:      createdAt,
+		},
+		{
+			ID:             "sample-game-garden-tactics",
+			Title:          "Garden Tactics",
+			Studio:         "Green Tile",
+			Platform:       "Switch",
+			Genre:          "Strategy",
+			StoreURL:       "https://example.com/games/garden-tactics",
+			MostlyPlayedOn: "2026-05-09",
+			Notes:          "Small decisions that feel satisfying to revisit.",
+			SortOrder:      20,
+			Status:         games.StatusPublished,
+			CreatedAt:      createdAt,
+		},
+		{
+			ID:             "sample-game-kindling",
+			Title:          "Kindling",
+			Studio:         "Small Fire",
+			Platform:       "PC",
+			Genre:          "Cozy Simulation",
+			StoreURL:       "https://example.com/games/kindling",
+			MostlyPlayedOn: "2026-05-08",
+			Notes:          "A cozy reset game with patient rituals.",
+			SortOrder:      30,
+			Status:         games.StatusPublished,
+			CreatedAt:      createdAt,
 		},
 	}
 }
@@ -805,15 +1047,26 @@ func sampleIntro() intro.Intro {
 
 	return intro.Intro{
 		ID:          intro.DefaultID,
-		Title:       "AI Engineer",
-		Description: "I build AI-enabled products, backend systems, and polished interfaces that turn model capabilities into reliable user workflows.",
+		Title:       "Software | AI - Engineer",
+		Description: "I turn rough ideas into AI-powered products people can actually use: sharp interfaces, sturdy APIs, and workflows that hold up beyond the demo.",
 		ProfilePicture: &intro.IntroImage{
 			ID:         "sample-intro-profile-picture",
 			URL:        "https://picsum.photos/seed/ai-engineer-profile/1200/1200",
-			AltText:    "AI Engineer profile portrait",
-			Caption:    "AI Engineer profile picture",
+			AltText:    "Eric Almendral portrait for an AI engineering portfolio",
+			Caption:    "Eric Almendral, AI engineer",
 			UploadedAt: createdAt,
 		},
 		CreatedAt: createdAt,
+	}
+}
+
+func sampleContactProfile() contact.Profile {
+	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+
+	return contact.Profile{
+		ID:          contact.DefaultProfileID,
+		WorkEmail:   "work@eralmendral.dev",
+		PhoneNumber: "+1 (555) 010-2026",
+		CreatedAt:   createdAt,
 	}
 }

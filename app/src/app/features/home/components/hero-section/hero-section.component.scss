@@ -1,0 +1,225 @@
+@use '../../../../../styles/tokens' as *;
+
+:host {
+  display: block;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.HeroSection {
+  position: relative;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 72px 24px;
+}
+
+.HeroLayout {
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.HeroExternalLink {
+  position: relative;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  color: var(--app-muted);
+  font-size: 18px;
+  font-weight: 850;
+  text-decoration: none;
+  transform-origin: left center;
+  transition:
+    transform 180ms ease;
+}
+
+.HeroExternalLink:hover {
+  color: var(--app-heading);
+}
+
+.HeroContent {
+  width: min(100%, 650px);
+  display: grid;
+  justify-items: center;
+  gap: 30px;
+  text-align: center;
+}
+
+.BrandLogo {
+  width: 288px;
+  height: 288px;
+  border-radius: 50%;
+  display: block;
+  object-fit: contain;
+  filter: var(--app-logo-filter);
+  transition: filter 180ms ease;
+}
+
+.HeroCopy {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+h1 {
+  margin: 0;
+  color: var(--app-heading);
+  font-size: 30px;
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.Lead {
+  max-width: 660px;
+  margin: 0;
+  color: var(--app-copy);
+  font-size: 21px;
+  line-height: 1.5;
+}
+
+.HeroLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px 34px;
+}
+
+.HeroExternalLinks {
+  min-height: 0;
+  padding-block-start: 16px;
+}
+
+.HeroLink {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: inline-grid;
+  justify-items: center;
+  gap: 9px;
+  color: var(--app-copy);
+  font-size: 15px;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.HeroLink:hover {
+  color: var(--app-heading);
+}
+
+.HeroLink:focus-visible {
+  outline: 3px solid var(--app-toggle-focus);
+  outline-offset: 4px;
+}
+
+.HeroLinkIcon {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  display: grid;
+  place-items: center;
+}
+
+.HeroExternalLink .HeroLinkIcon {
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.18));
+  text-shadow: 0 8px 12px rgba(0, 0, 0, 0.18);
+}
+
+hugeicons-icon {
+  display: inline-grid;
+  color: currentColor;
+  line-height: 0;
+}
+
+.InlineRetry {
+  cursor: pointer;
+}
+
+.ScreenReaderOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .HeroLink {
+    transition: none;
+  }
+}
+
+@media (max-width: 1020px) {
+  .HeroSection {
+    padding: 78px 22px 24px;
+  }
+
+  .HeroContent {
+    gap: 18px;
+  }
+
+  .HeroExternalLinks {
+    gap: 20px 28px;
+    padding-block-start: 12px;
+  }
+
+  .HeroExternalLink:hover {
+    transform: scale(1.04);
+  }
+}
+
+@media (max-width: 720px) {
+  .HeroSection {
+    padding: 72px 16px 20px;
+  }
+
+  .BrandLogo {
+    width: 210px;
+    height: 210px;
+  }
+
+  .Lead {
+    max-width: 248px;
+    font-size: 17px;
+  }
+
+  h1 {
+    font-size: 25px;
+  }
+
+  .HeroExternalLinks {
+    gap: 18px 24px;
+    padding-block-start: 10px;
+  }
+}
+
+@media (max-height: 700px) {
+  .HeroSection {
+    padding-block: 66px 16px;
+  }
+
+  .HeroContent {
+    gap: 12px;
+  }
+
+  .BrandLogo {
+    width: 150px;
+    height: 150px;
+  }
+
+  .Lead {
+    font-size: 15px;
+    line-height: 1.35;
+  }
+
+  h1 {
+    font-size: 23px;
+  }
+
+}

@@ -1,0 +1,58 @@
+@use '../styles/tokens' as *;
+
+:host {
+  --app-page-bg: #f7f7f7;
+  --app-page-wash-start: rgba(255, 255, 255, 0.9);
+  --app-page-wash-end: rgba(238, 238, 238, 0.76);
+  --app-panel-bg: rgba(255, 255, 255, 0.94);
+  --app-panel-border: #dedede;
+  --app-heading: #0a0a0a;
+  --app-copy: #3f3f3f;
+  --app-muted: #5a5a5a;
+  --app-logo-filter: none;
+  --app-toggle-bg: rgba(255, 255, 255, 0.86);
+  --app-toggle-border: rgba(18, 18, 18, 0.14);
+  --app-toggle-track: #ece7dc;
+  --app-toggle-option: #6b665b;
+  --app-toggle-thumb: #ffffff;
+  --app-toggle-thumb-color: #f97316;
+  --app-toggle-focus: #0a0a0a;
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  color-scheme: light;
+}
+
+:host([data-theme='dark']) {
+  --app-page-bg: #111210;
+  --app-page-wash-start: rgba(23, 24, 21, 0.9);
+  --app-page-wash-end: rgba(39, 44, 38, 0.72);
+  --app-panel-bg: rgba(20, 21, 18, 0.94);
+  --app-panel-border: #3b4038;
+  --app-heading: #f7f3ea;
+  --app-copy: #d7d2c8;
+  --app-muted: #aaa594;
+  --app-logo-filter: invert(1) brightness(1.12);
+  --app-toggle-bg: rgba(23, 24, 21, 0.88);
+  --app-toggle-border: rgba(247, 243, 234, 0.18);
+  --app-toggle-track: #222821;
+  --app-toggle-option: #aaa594;
+  --app-toggle-thumb: #f7f3ea;
+  --app-toggle-thumb-color: #38bdf8;
+  --app-toggle-focus: #f7f3ea;
+  color-scheme: dark;
+}
+
+.AppShell {
+  width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, var(--app-page-wash-start), var(--app-page-wash-end)),
+    var(--app-page-bg);
+  color: var(--app-heading);
+  transition: background-color 180ms ease;
+}

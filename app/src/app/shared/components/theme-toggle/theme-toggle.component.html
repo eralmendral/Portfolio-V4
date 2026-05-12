@@ -1,0 +1,17 @@
+<button
+  class="ThemeToggle"
+  type="button"
+  [class.ThemeToggleDark]="theme.isDarkMode()"
+  [attr.aria-label]="theme.toggleLabel()"
+  [title]="theme.toggleLabel()"
+  (click)="toggleTheme()"
+>
+  <hugeicons-icon
+    [icon]="theme.isDarkMode() ? moonIcon : sunIcon"
+    [size]="24"
+    color="currentColor"
+    [strokeWidth]="2.35"
+    aria-hidden="true"
+  />
+  <span class="ScreenReaderOnly">{{ theme.activeLabel() }}</span>
+</button>

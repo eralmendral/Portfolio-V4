@@ -1,0 +1,65 @@
+@use '../../../../styles/tokens' as *;
+
+.ThemeToggle {
+  position: fixed;
+  inset-block-start: 20px;
+  inset-inline-end: 20px;
+  z-index: 20;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  background: transparent;
+  color: var(--app-heading);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    color 180ms ease,
+    transform 160ms ease;
+}
+
+.ThemeToggleDark {
+  color: var(--app-heading);
+}
+
+.ThemeToggle:hover {
+  color: var(--app-copy);
+  transform: translateY(-1px);
+}
+
+.ThemeToggle:active {
+  transform: translateY(0);
+}
+
+.ThemeToggle:focus-visible {
+  outline: 3px solid var(--app-toggle-focus);
+  outline-offset: 3px;
+}
+
+hugeicons-icon {
+  display: inline-grid;
+  color: currentColor;
+  line-height: 0;
+}
+
+.ScreenReaderOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 720px) {
+  .ThemeToggle {
+    inset-block-start: 16px;
+    inset-inline-end: 16px;
+    width: 42px;
+    height: 42px;
+  }
+}

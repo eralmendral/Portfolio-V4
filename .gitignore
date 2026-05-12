@@ -14,6 +14,16 @@
 .DS_Store
 Thumbs.db
 
+# Logs and runtime output
+*.log
+*.pid
+
+# Dependency and build output
+node_modules/
+dist/
+.angular/
+coverage/
+
 # Local Codex skills
 skills/
 

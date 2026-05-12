@@ -10,10 +10,10 @@ func TestCommonHeadersHandlesConfiguredCORSPreflight(t *testing.T) {
 	called := false
 	handler := withCommonHeaders(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		called = true
-	}), "http://localhost:3000")
+	}), []string{"http://localhost:4200"})
 
 	request := httptest.NewRequest(http.MethodOptions, "/projects", nil)
-	request.Header.Set("Origin", "http://localhost:3000")
+	request.Header.Set("Origin", "http://localhost:4200")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)
@@ -24,21 +24,54 @@ func TestCommonHeadersHandlesConfiguredCORSPreflight(t *testing.T) {
 	if response.Code != http.StatusNoContent {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusNoContent)
 	}
-	if got := response.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:3000" {
-		t.Fatalf("allow origin = %q, want http://localhost:3000", got)
+	if got := response.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:4200" {
+		t.Fatalf("allow origin = %q, want http://localhost:4200", got)
 	}
 	if got := response.Header().Get("Access-Control-Allow-Headers"); got != "Authorization, Content-Type, Accept" {
 		t.Fatalf("allow headers = %q, want Authorization, Content-Type, Accept", got)
 	}
 }
 
+func TestCommonHeadersAllowsAnyConfiguredOrigin(t *testing.T) {
+	handler := withCommonHeaders(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}), []string{"http://localhost:4200", "http://127.0.0.1:4200"})
+
+	request := httptest.NewRequest(http.MethodGet, "/projects", nil)
+	request.Header.Set("Origin", "http://127.0.0.1:4200")
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if got := response.Header().Get("Access-Control-Allow-Origin"); got != "http://127.0.0.1:4200" {
+		t.Fatalf("allow origin = %q, want http://127.0.0.1:4200", got)
+	}
+}
+
+func TestClientOriginsFromEnvParsesCommaSeparatedOrigins(t *testing.T) {
+	t.Setenv("CLIENT_ORIGINS", " http://localhost:4200, http://127.0.0.1:4200/ ")
+	t.Setenv("CLIENT_ORIGIN", "http://localhost:4200")
+
+	origins := clientOriginsFromEnv()
+
+	if len(origins) != 2 {
+		t.Fatalf("origin count = %d, want 2: %#v", len(origins), origins)
+	}
+	if origins[0] != "http://localhost:4200" || origins[1] != "http://127.0.0.1:4200" {
+		t.Fatalf("origins = %#v, want localhost and 127.0.0.1", origins)
+	}
+}
+
 func TestCommonHeadersSkipsCORSWhenOriginIsNotConfigured(t *testing.T) {
 	handler := withCommonHeaders(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
-	}), "")
+	}), nil)
 
 	request := httptest.NewRequest(http.MethodOptions, "/projects", nil)
-	request.Header.Set("Origin", "http://localhost:3000")
+	request.Header.Set("Origin", "http://localhost:4200")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)

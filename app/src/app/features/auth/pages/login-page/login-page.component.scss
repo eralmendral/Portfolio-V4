@@ -1,0 +1,84 @@
+@use '../../../../../styles/tokens' as *;
+
+:host {
+  display: block;
+}
+
+.AuthPage {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 96px 24px;
+}
+
+.AuthForm {
+  width: min(100%, 360px);
+  display: grid;
+  gap: 16px;
+}
+
+.Eyebrow,
+h1,
+.FormError {
+  margin: 0;
+}
+
+.Eyebrow {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+h1 {
+  color: var(--app-heading);
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.04;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  color: var(--app-copy);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--app-panel-border);
+  border-radius: 0;
+  background: var(--app-panel-bg);
+  color: var(--app-heading);
+  padding: 8px 10px;
+}
+
+input:focus-visible,
+.SubmitButton:focus-visible {
+  outline: 3px solid var(--app-toggle-focus);
+  outline-offset: 3px;
+}
+
+.FormError {
+  color: var(--app-heading);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.SubmitButton {
+  min-height: 44px;
+  border: 1px solid var(--app-heading);
+  border-radius: 0;
+  background: var(--app-heading);
+  color: var(--app-page-bg);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.SubmitButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+}

@@ -1,0 +1,205 @@
+.LinkRail,
+.EntertainmentRail {
+  position: fixed;
+  inset-block-start: 50%;
+  z-index: 18;
+  display: grid;
+  transform: translateY(-50%);
+}
+
+.LinkRail {
+  inset-inline-start: clamp(14px, 2vw, 26px);
+  width: min(268px, 28vw);
+}
+
+.EntertainmentRail {
+  inset-inline-end: clamp(8px, 1vw, 14px);
+  width: min(180px, 18vw);
+}
+
+.SectionTimeline,
+.EntertainmentLinks {
+  display: grid;
+  gap: 38px;
+}
+
+.SectionTimeline {
+  position: relative;
+  padding-inline-start: 44px;
+}
+
+.EntertainmentTimeline {
+  justify-items: end;
+  padding-inline: 0 44px;
+  text-align: end;
+}
+
+.TimelineLink {
+  position: relative;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--app-muted);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  padding: 0;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 850;
+  text-align: inherit;
+  text-decoration: none;
+  transform-origin: left center;
+  cursor: pointer;
+  transition: transform 180ms ease;
+}
+
+.TimelineIcon {
+  position: absolute;
+  inset-inline-start: -42px;
+  width: 18px;
+  height: 18px;
+  color: var(--app-muted);
+  display: grid;
+  place-items: center;
+  transition: color 160ms ease, transform 180ms ease;
+}
+
+.TimelineIcon::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 24px;
+  width: 12px;
+  height: 1px;
+  background: var(--app-panel-border);
+}
+
+.EntertainmentTimeline .TimelineIcon {
+  inset-inline-start: auto;
+  inset-inline-end: -42px;
+}
+
+.EntertainmentTimeline .TimelineIcon::after {
+  inset-inline-start: auto;
+  inset-inline-end: 24px;
+}
+
+.TimelineLink:hover,
+.TimelineLinkActive {
+  color: var(--app-heading);
+}
+
+.TimelineLink:hover .TimelineIcon,
+.TimelineLinkActive .TimelineIcon {
+  color: var(--app-heading);
+  transform: scale(1.04);
+}
+
+hugeicons-icon {
+  display: inline-grid;
+  color: currentColor;
+  line-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .TimelineLink {
+    transition: none;
+  }
+}
+
+@media (max-width: 1020px) {
+  .LinkRail {
+    inset-inline-start: 14px;
+    width: 214px;
+  }
+
+  .EntertainmentRail {
+    inset-inline-end: 8px;
+    width: 40px;
+  }
+
+  .SectionTimeline,
+  .EntertainmentLinks {
+    gap: 30px;
+  }
+
+  .SectionTimeline {
+    padding-inline-start: 39px;
+  }
+
+  .EntertainmentTimeline {
+    padding-inline: 0 39px;
+  }
+
+  .TimelineLink {
+    min-height: 40px;
+    font-size: 16px;
+  }
+
+  .TimelineLink:hover,
+  .TimelineLinkActive {
+    transform: scale(1.04);
+  }
+
+  .TimelineIcon {
+    inset-inline-start: -36px;
+    width: 17px;
+    height: 17px;
+  }
+
+  .EntertainmentTimeline .TimelineIcon {
+    inset-inline-start: auto;
+    inset-inline-end: -36px;
+  }
+
+  .EntertainmentRail .RailLabel,
+  .EntertainmentRail .TimelineIcon::after {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .LinkRail {
+    inset-inline-start: 10px;
+    width: 36px;
+  }
+
+  .EntertainmentRail {
+    inset-inline-end: 8px;
+    width: 36px;
+  }
+
+  .SectionTimeline,
+  .EntertainmentLinks {
+    gap: 22px;
+  }
+
+  .SectionTimeline {
+    padding-inline-start: 31px;
+  }
+
+  .EntertainmentTimeline {
+    padding-inline: 0 31px;
+  }
+
+  .TimelineLink {
+    min-height: 36px;
+    font-size: 14px;
+  }
+
+  .TimelineIcon {
+    inset-inline-start: -30px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .EntertainmentTimeline .TimelineIcon {
+    inset-inline-start: auto;
+    inset-inline-end: -30px;
+  }
+
+  .RailLabel,
+  .TimelineIcon::after {
+    display: none;
+  }
+}

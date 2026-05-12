@@ -1,0 +1,42 @@
+@use '../../../../styles/tokens' as *;
+
+.HomeShortcut {
+  position: fixed;
+  inset-inline-start: 20px;
+  inset-block-start: 20px;
+  z-index: 20;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  color: var(--app-heading);
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.HomeShortcut:hover {
+  color: var(--app-copy);
+  transform: translateY(-1px);
+}
+
+.HomeShortcut:focus-visible {
+  outline: 3px solid var(--app-toggle-focus);
+  outline-offset: 3px;
+}
+
+hugeicons-icon {
+  display: inline-grid;
+  color: currentColor;
+  line-height: 0;
+}
+
+@media (max-width: 720px) {
+  .HomeShortcut {
+    inset-inline-start: 14px;
+    inset-block-start: 14px;
+    width: 42px;
+    height: 42px;
+  }
+}
