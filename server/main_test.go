@@ -83,3 +83,58 @@ func TestCommonHeadersSkipsCORSWhenOriginIsNotConfigured(t *testing.T) {
 		t.Fatalf("allow origin = %q, want empty", got)
 	}
 }
+
+func TestRequestMonitoringAddsRequestID(t *testing.T) {
+	handler := withRequestMonitoring(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	request := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusNoContent)
+	}
+	if got := response.Header().Get("X-Request-ID"); got == "" {
+		t.Fatal("X-Request-ID header should be set")
+	}
+}
+
+func TestRequestMonitoringKeepsIncomingRequestID(t *testing.T) {
+	handler := withRequestMonitoring(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	}))
+
+	request := httptest.NewRequest(http.MethodGet, "/projects", nil)
+	request.Header.Set("X-Request-ID", "existing-request-id")
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusAccepted)
+	}
+	if got := response.Header().Get("X-Request-ID"); got != "existing-request-id" {
+		t.Fatalf("X-Request-ID = %q, want existing-request-id", got)
+	}
+}
+
+func TestRequestMonitoringRecoversPanics(t *testing.T) {
+	handler := withRequestMonitoring(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		panic("boom")
+	}))
+
+	request := httptest.NewRequest(http.MethodGet, "/panic", nil)
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusInternalServerError)
+	}
+	if got := response.Header().Get("X-Request-ID"); got == "" {
+		t.Fatal("X-Request-ID header should be set")
+	}
+}

@@ -9,6 +9,7 @@ on:
       - "scripts/deploy-production.sh"
       - ".github/workflows/deploy-production.yml"
       - "deployment.md"
+      - "monitoring.md"
   workflow_dispatch:
     inputs:
       deploy_scope:
@@ -86,10 +87,10 @@ jobs:
 
               echo "$changed_files"
 
-              if echo "$changed_files" | grep -Eq '^(app/|scripts/deploy-production\.sh|\.github/workflows/deploy-production\.yml|deployment\.md)'; then
+              if echo "$changed_files" | grep -Eq '^(app/|scripts/deploy-production\.sh|\.github/workflows/deploy-production\.yml|deployment\.md|monitoring\.md)'; then
                 app_changed=true
               fi
-              if echo "$changed_files" | grep -Eq '^(server/|scripts/deploy-production\.sh|\.github/workflows/deploy-production\.yml|deployment\.md)'; then
+              if echo "$changed_files" | grep -Eq '^(server/|scripts/deploy-production\.sh|\.github/workflows/deploy-production\.yml|deployment\.md|monitoring\.md)'; then
                 server_changed=true
               fi
             fi
@@ -178,7 +179,9 @@ jobs:
       needs.detect.outputs.deploy_scope != 'none' &&
       (needs.app-check.result == 'success' || needs.app-check.result == 'skipped') &&
       (needs.server-check.result == 'success' || needs.server-check.result == 'skipped')
-    environment: production
+    environment:
+      name: production
+      url: ${{ secrets.FRONTEND_URL }}
     steps:
       - name: Configure SSH
         shell: bash
@@ -218,3 +221,13 @@ jobs:
             -o IdentitiesOnly=yes \
             "$DO_USER@$DO_HOST" \
             "$remote_command"
+
+      - name: Report successful deployment heartbeat
+        shell: bash
+        env:
+          BETTER_STACK_DEPLOY_HEARTBEAT_URL: ${{ secrets.BETTER_STACK_DEPLOY_HEARTBEAT_URL }}
+        run: |
+          set -euo pipefail
+          if [ -n "$BETTER_STACK_DEPLOY_HEARTBEAT_URL" ]; then
+            curl -fsS "$BETTER_STACK_DEPLOY_HEARTBEAT_URL"
+          fi
