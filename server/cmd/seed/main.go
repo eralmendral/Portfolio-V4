@@ -461,18 +461,18 @@ func sampleProjectIDsForCleanup() []string {
 
 func sampleProjects() []projects.Project {
 	return []projects.Project{
-		migratedProject("1", "Latin Tienda", "South American Ecommerce Site", "", "", "laravel, php, node, react", "laravel, react", "/assets/migrated/projects/latintienda/homepage.png", 1, "2023-07-15 03:12:28.416392+00",
+		migratedProject("1", "Latin Tienda", "Ecommerce storefront for South American products, built around clean product browsing and a straightforward checkout path.", "", "", "laravel, php, node, react", "laravel, react", "/assets/migrated/projects/latintienda/homepage.png", 1, "2023-07-15 03:12:28.416392+00", false,
 			"/assets/migrated/projects/latintienda/categories.png",
 			"/assets/migrated/projects/latintienda/eletronic-products.png",
 			"/assets/migrated/projects/latintienda/login.png",
 			"/assets/migrated/projects/latintienda/product.png",
 			"/assets/migrated/projects/latintienda/products.png"),
-		migratedProject("2", "Cyclistian - Bicycle Shop", "An e-commerce website for bicycles, bike parts or acccesories.", "", "", "", "", "/assets/migrated/projects/cyclistian/store.png", 2, "2023-07-15 03:13:18.143608+00",
+		migratedProject("2", "Cyclistian - Bicycle Shop", "Bike shop ecommerce experience with product discovery, order flow, and store pages for bicycles, parts, and accessories.", "", "", "", "", "/assets/migrated/projects/cyclistian/store.png", 2, "2023-07-15 03:13:18.143608+00", true,
 			"/assets/migrated/projects/cyclistian/banner.png",
 			"/assets/migrated/projects/cyclistian/orders.png",
 			"/assets/migrated/projects/cyclistian/thumbnail.png",
 			"/assets/migrated/projects/cyclistian/visitus.png"),
-		migratedProject("3", "Haru Queue Ordering", "A real time ordering Progressive Web App where restaurant customers can place their order from the app using the restaurant's provided smartphones or tablets in the table. Their order then will be added to the queue and the kitchen staffs and the admin could monitor the orders of all tables and process it in Queue.", "", "https://harux-queue-ordering.vercel.app/", "", "", "/assets/migrated/projects/haru-queue-ordering/user_menu.png", 3, "2023-07-15 03:14:15.678173+00",
+		migratedProject("3", "Haru Queue Ordering", "Restaurant ordering PWA for table-side ordering, kitchen queue management, and admin monitoring across active tables.", "", "https://harux-queue-ordering.vercel.app/", "", "", "/assets/migrated/projects/haru-queue-ordering/user_menu.png", 3, "2023-07-15 03:14:15.678173+00", false,
 			"/assets/migrated/projects/haru-queue-ordering/admin_chickens.png",
 			"/assets/migrated/projects/haru-queue-ordering/admin_dashboard.png",
 			"/assets/migrated/projects/haru-queue-ordering/admin_order_detail.png",
@@ -482,21 +482,21 @@ func sampleProjects() []projects.Project {
 			"/assets/migrated/projects/haru-queue-ordering/login.png",
 			"/assets/migrated/projects/haru-queue-ordering/user_all_orders.png",
 			"/assets/migrated/projects/haru-queue-ordering/user_menu_2.png"),
-		migratedProject("4", "Harux App UI/UX", "UI / UX Prototype for harux queue ordering application", "", "https://xd.adobe.com/view/f4094e54-9e82-400b-76d9-304a562778a1-8238/", "", "", "/assets/migrated/projects/harux-app-ui-ux/1.png", 5, "2023-07-19 23:25:15.443768+00",
+		migratedProject("4", "Harux App UI/UX", "Mobile ordering prototype focused on a faster menu flow, clearer order states, and practical restaurant handoff screens.", "", "https://xd.adobe.com/view/f4094e54-9e82-400b-76d9-304a562778a1-8238/", "", "", "/assets/migrated/projects/harux-app-ui-ux/1.png", 5, "2023-07-19 23:25:15.443768+00", true,
 			"/assets/migrated/projects/harux-app-ui-ux/2.png",
 			"/assets/migrated/projects/harux-app-ui-ux/3.png",
 			"/assets/migrated/projects/harux-app-ui-ux/4.png",
 			"/assets/migrated/projects/harux-app-ui-ux/5.png"),
-		migratedProject("5", "Light of the World Worldwide Ministries Site", "Website for church organization Light of the World Worldwide Ministries. Get newcomers sign up info, visitor inquiries and pass to the internal system.", "", "", "", "", "/assets/migrated/projects/lowwm/Homepage.png", 7, "2023-07-19 23:25:45.796568+00",
+		migratedProject("5", "Light of the World Worldwide Ministries Site", "Church website that helps visitors find schedules, events, sermons, and contact paths that feed into internal follow-up workflows.", "", "", "", "", "/assets/migrated/projects/lowwm/Homepage.png", 7, "2023-07-19 23:25:45.796568+00", true,
 			"/assets/migrated/projects/lowwm/ContactUs.png",
 			"/assets/migrated/projects/lowwm/Events.png",
 			"/assets/migrated/projects/lowwm/Gallery.png",
 			"/assets/migrated/projects/lowwm/Schedule.png",
 			"/assets/migrated/projects/lowwm/Sermons.png"),
-		migratedProject("6", "Crisp Online Ordering", "Contribution to crisp online ordering, dashboard and mobile apps", "", "https://www.crispqsr.com/", "", "", "/assets/migrated/projects/crisp/crisp-site.png", 6, "2023-07-19 23:26:31.296606+00",
+		migratedProject("6", "Crisp Online Ordering", "Product work across online ordering, dashboard, and mobile surfaces for restaurant ordering operations.", "", "https://www.crispqsr.com/", "", "", "/assets/migrated/projects/crisp/crisp-site.png", 6, "2023-07-19 23:26:31.296606+00", true,
 			"/assets/migrated/projects/crisp/locations.png",
 			"/assets/migrated/projects/crisp/menu.png"),
-		migratedProject("7", "Bootcamp Project", "Bootcamp Challenge Project using an unfamiliar backend framework. Created a cars dealing website where user can see car listing and contact car seller when signed up. Used the project as a training on how to use SCRUM practice.", "", "", "", "", "/assets/migrated/projects/bootcamp-project/homepage.png", 4, "2023-07-19 23:27:03.271084+00",
+		migratedProject("7", "Bootcamp Project", "Car marketplace built as a bootcamp challenge, covering listings, authentication, seller contact, and agile delivery practice.", "", "", "", "", "/assets/migrated/projects/bootcamp-project/homepage.png", 4, "2023-07-19 23:27:03.271084+00", true,
 			"/assets/migrated/projects/bootcamp-project/add_car.png",
 			"/assets/migrated/projects/bootcamp-project/car_details_authed.png",
 			"/assets/migrated/projects/bootcamp-project/gtr-red-3.jpg",
@@ -505,19 +505,19 @@ func sampleProjects() []projects.Project {
 			"/assets/migrated/projects/bootcamp-project/sign_up.png",
 			"/assets/migrated/projects/bootcamp-project/update_car.png",
 			"/assets/migrated/projects/bootcamp-project/view_car_not_authed.png"),
-		migratedProject("8", "Node API Boilerplate", "Node Architecture boilerplate to speedup development, example project is 'Bootcamp Directory'", "https://github.com/eralmendral1/node_api_boilerplate", "", "", "", "/assets/migrated/projects/node-api-boilerplate/Thumbnail.png", 11, "2023-07-19 23:28:28.075372+00",
+		migratedProject("8", "Node API Boilerplate", "Reusable Node API starter with project structure, conventions, and examples for shipping backend features faster.", "https://github.com/eralmendral1/node_api_boilerplate", "", "", "", "/assets/migrated/projects/node-api-boilerplate/Thumbnail.png", 11, "2023-07-19 23:28:28.075372+00", true,
 			"/assets/migrated/projects/node-api-boilerplate/Postman.png"),
-		migratedProject("9", "Waiterpro Ordering", "Contributed to Waiterpro Online Ordering", "", "https://www.waiterpro.com/", "", "", "/assets/migrated/projects/waiterpro/site.png", 12, "2023-07-19 23:29:22.931019+00",
+		migratedProject("9", "Waiterpro Ordering", "Online ordering contribution focused on restaurant ordering screens, dashboard flow, and production-facing polish.", "", "https://www.waiterpro.com/", "", "", "/assets/migrated/projects/waiterpro/site.png", 12, "2023-07-19 23:29:22.931019+00", true,
 			"/assets/migrated/projects/waiterpro/dashboard.png"),
-		migratedProject("10", "ChurchApp Mobile UI/UX", "UI-UX Mobile Prototype church app", "", "https://xd.adobe.com/view/c67f2f8b-ab1a-43bf-6d73-2232defea040-b04e/grid/", "", "", "/assets/migrated/projects/churchapp-mobile-ui-ux/Wireframes.png", 10, "2023-07-19 23:30:10.798262+00",
+		migratedProject("10", "ChurchApp Mobile UI/UX", "Mobile app prototype for church workflows, reports, and member-facing screens with a simple navigation model.", "", "https://xd.adobe.com/view/c67f2f8b-ab1a-43bf-6d73-2232defea040-b04e/grid/", "", "", "/assets/migrated/projects/churchapp-mobile-ui-ux/Wireframes.png", 10, "2023-07-19 23:30:10.798262+00", true,
 			"/assets/migrated/projects/churchapp-mobile-ui-ux/Reports.png"),
-		migratedProject("11", "ChurchAdmin Dashboard (WIP)", "Backend Dashboard for managing reports, users, groups, roles, trainings, etc. of the church. Some data are fetched from the CMS and sync to AWS. See architecture diagram in the images slides", "", "https://congregation-suite.vercel.app/dashboard/users", "", "", "/assets/migrated/projects/churchadmin/vips.png", 9, "2023-07-19 23:31:01.20104+00",
+		migratedProject("11", "ChurchAdmin Dashboard (WIP)", "Admin dashboard for church operations, covering users, groups, roles, reports, training data, and CMS-to-AWS sync work.", "", "https://congregation-suite.vercel.app/dashboard/users", "", "", "/assets/migrated/projects/churchadmin/vips.png", 9, "2023-07-19 23:31:01.20104+00", true,
 			"/assets/migrated/projects/churchadmin/Architecture.png",
 			"/assets/migrated/projects/churchadmin/add_user.png",
 			"/assets/migrated/projects/churchadmin/users.png"),
-		migratedProject("12", "Impactify Internal System v2", "Contribution to Internal System Frontend Development Version2", "", "https://impactify.io/", "", "", "/assets/migrated/projects/impactify/impactify.png", 8, "2023-07-19 23:32:40.963587+00"),
-		migratedProject("13", "JPO Contact Center - Nexus", "A call center application for handling real-time Calls, SMS and Tickets. Lead developer of frontend, backend and server, database setup and management.", "", "https://nexus.justpressone.com/", "", "", "/assets/migrated/projects/jpo-contact-center-nexus/nexus.png", 13, "2023-07-19 23:34:05.480017+00"),
-		migratedProject("14", "Netflix-Clone Next13@latest", "Netflix clone using Next13, Tailwind, Prisma, MongoDB", "", "https://rt-netflix-clone.vercel.app/auth", "next13", "next13", "/assets/migrated/projects/netflix-clone/nt-netflixclone-home.png", 14, "2023-08-05 14:18:48.159811+00",
+		migratedProject("12", "Impactify", "Frontend contribution to a high-volume internal platform, with attention to practical workflows and maintainable UI delivery.", "", "https://impactify.io/", "", "", "/assets/migrated/projects/impactify/impactify.png", 8, "2023-07-19 23:32:40.963587+00", false),
+		migratedProject("13", "Nexus", "Contact center platform for real-time calls, SMS, and tickets, spanning frontend, backend, server setup, and database operations.", "", "https://nexus.justpressone.com/", "", "", "/assets/migrated/projects/jpo-contact-center-nexus/nexus.png", 13, "2023-07-19 23:34:05.480017+00", false),
+		migratedProject("14", "Netflix-Clone Next13@latest", "Streaming app clone built with Next.js, Tailwind, Prisma, and MongoDB to practice full-stack product patterns.", "", "https://rt-netflix-clone.vercel.app/auth", "next13", "next13", "/assets/migrated/projects/netflix-clone/nt-netflixclone-home.png", 14, "2023-08-05 14:18:48.159811+00", true,
 			"/assets/migrated/projects/netflix-clone/nt-netflixclone-auth.png"),
 	}
 }
@@ -555,7 +555,7 @@ func sampleCertificates() []certificates.Certificate {
 	}
 }
 
-func migratedProject(sourceID string, title string, description string, githubURL string, demoURL string, tags string, tools string, thumbnail string, sortOrder int, createdAt string, galleryImages ...string) projects.Project {
+func migratedProject(sourceID string, title string, description string, githubURL string, demoURL string, tags string, tools string, thumbnail string, sortOrder int, createdAt string, archived bool, galleryImages ...string) projects.Project {
 	parsedCreatedAt := mustParseCSVTimestamp(createdAt)
 	cleanTitle := strings.TrimSpace(title)
 	project := projects.Project{
@@ -568,6 +568,7 @@ func migratedProject(sourceID string, title string, description string, githubUR
 		Tags:        splitSeedCSVList(tags),
 		GitHubURL:   strings.TrimSpace(githubURL),
 		DemoURL:     strings.TrimSpace(demoURL),
+		Archived:    archived,
 		SortOrder:   sortOrder,
 		Status:      projects.StatusPublished,
 		CreatedAt:   parsedCreatedAt,
