@@ -8,7 +8,17 @@ import type {
   ContactSubmissionRequest,
 } from '../models/contact.models';
 import type { MusicEntry } from '../models/music.models';
-import type { IntroSummary, PortfolioLink, ProjectSummary } from '../models/portfolio.models';
+import type {
+  Certificate,
+  CertificateImage,
+  IntroSummary,
+  PortfolioLink,
+  ProjectSummary,
+  Skill,
+  SkillCategory,
+  Tool,
+  WorkExperience,
+} from '../models/portfolio.models';
 
 interface LinksResponse {
   links: PortfolioLink[];
@@ -16,6 +26,26 @@ interface LinksResponse {
 
 interface ProjectsResponse {
   projects: ProjectSummary[];
+}
+
+interface SkillCategoriesResponse {
+  skill_categories: SkillCategory[];
+}
+
+interface SkillsResponse {
+  skills: Skill[];
+}
+
+interface ToolsResponse {
+  tools: Tool[];
+}
+
+interface CertificatesResponse {
+  certificates: Certificate[];
+}
+
+interface WorkExperiencesResponse {
+  work_experiences: WorkExperience[];
 }
 
 interface MusicResponse {
@@ -66,14 +96,95 @@ export class PortfolioApi {
   }
 
   async listFeaturedProjects(abortSignal: AbortSignal): Promise<ProjectSummary[]> {
-    const payload = await this.getJson('/projects?status=published&featured=true', abortSignal);
+    const payload = await this.getJson('/projects?status=published&featured=true&archived=false', abortSignal);
     if (!isProjectsResponse(payload)) {
       throw new Error('Projects response was not valid.');
     }
 
     return payload.projects
-      .filter((project) => project.featured && project.status === 'published')
+      .filter((project) => project.featured && project.status === 'published' && !project.archived)
       .sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title));
+  }
+
+  async listPublishedProjects(abortSignal: AbortSignal): Promise<ProjectSummary[]> {
+    const payload = await this.getJson('/projects?status=published&archived=false', abortSignal);
+    if (!isProjectsResponse(payload)) {
+      throw new Error('Projects response was not valid.');
+    }
+
+    return payload.projects
+      .filter((project) => project.status === 'published' && !project.archived)
+      .sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title));
+  }
+
+  async listArchivedProjects(abortSignal: AbortSignal): Promise<ProjectSummary[]> {
+    const payload = await this.getJson('/projects?status=published&archived=true', abortSignal);
+    if (!isProjectsResponse(payload)) {
+      throw new Error('Projects response was not valid.');
+    }
+
+    return payload.projects
+      .filter((project) => project.status === 'published' && project.archived)
+      .sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title));
+  }
+
+  async listPublishedSkillCategories(abortSignal: AbortSignal): Promise<SkillCategory[]> {
+    const payload = await this.getJson('/skill-categories?status=published', abortSignal);
+    if (!isSkillCategoriesResponse(payload)) {
+      throw new Error('Skill categories response was not valid.');
+    }
+
+    return payload.skill_categories
+      .filter((category) => category.status === 'published')
+      .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  }
+
+  async listPublishedSkills(abortSignal: AbortSignal): Promise<Skill[]> {
+    const payload = await this.getJson('/skills?status=published', abortSignal);
+    if (!isSkillsResponse(payload)) {
+      throw new Error('Skills response was not valid.');
+    }
+
+    return payload.skills
+      .filter((skill) => skill.status === 'published')
+      .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  }
+
+  async listPublishedTools(abortSignal: AbortSignal): Promise<Tool[]> {
+    const payload = await this.getJson('/tools?status=published', abortSignal);
+    if (!isToolsResponse(payload)) {
+      throw new Error('Tools response was not valid.');
+    }
+
+    return payload.tools
+      .filter((tool) => tool.status === 'published')
+      .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  }
+
+  async listPublishedCertificates(abortSignal: AbortSignal): Promise<Certificate[]> {
+    const payload = await this.getJson('/certificates?status=published', abortSignal);
+    if (!isCertificatesResponse(payload)) {
+      throw new Error('Certificates response was not valid.');
+    }
+
+    return payload.certificates
+      .filter((certificate) => certificate.status === 'published')
+      .sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title));
+  }
+
+  async listPublishedWorkExperiences(abortSignal: AbortSignal): Promise<WorkExperience[]> {
+    const payload = await this.getJson('/work-experiences?status=published', abortSignal);
+    if (!isWorkExperiencesResponse(payload)) {
+      throw new Error('Work experiences response was not valid.');
+    }
+
+    return payload.work_experiences
+      .filter((experience) => experience.status === 'published')
+      .sort((a, b) => (
+        a.sort_order - b.sort_order
+        || Date.parse(b.started_at) - Date.parse(a.started_at)
+        || a.company.localeCompare(b.company)
+      ));
   }
 
   async getIntro(abortSignal: AbortSignal): Promise<IntroSummary> {
@@ -239,6 +350,38 @@ function isProjectsResponse(payload: unknown): payload is ProjectsResponse {
   return payload['projects'].every(isProjectSummary);
 }
 
+function isSkillCategoriesResponse(payload: unknown): payload is SkillCategoriesResponse {
+  return (
+    isRecord(payload)
+    && Array.isArray(payload['skill_categories'])
+    && payload['skill_categories'].every(isSkillCategory)
+  );
+}
+
+function isSkillsResponse(payload: unknown): payload is SkillsResponse {
+  return isRecord(payload) && Array.isArray(payload['skills']) && payload['skills'].every(isSkill);
+}
+
+function isToolsResponse(payload: unknown): payload is ToolsResponse {
+  return isRecord(payload) && Array.isArray(payload['tools']) && payload['tools'].every(isTool);
+}
+
+function isCertificatesResponse(payload: unknown): payload is CertificatesResponse {
+  return (
+    isRecord(payload)
+    && Array.isArray(payload['certificates'])
+    && payload['certificates'].every(isCertificate)
+  );
+}
+
+function isWorkExperiencesResponse(payload: unknown): payload is WorkExperiencesResponse {
+  return (
+    isRecord(payload)
+    && Array.isArray(payload['work_experiences'])
+    && payload['work_experiences'].every(isWorkExperience)
+  );
+}
+
 function isIntroResponse(payload: unknown): payload is IntroResponse {
   return (
     isRecord(payload)
@@ -326,8 +469,120 @@ function isProjectSummary(value: unknown): value is ProjectSummary {
     && typeof value['slug'] === 'string'
     && typeof value['title'] === 'string'
     && (typeof value['summary'] === 'string' || value['summary'] === undefined)
+    && (typeof value['description'] === 'string' || value['description'] === undefined)
     && (isStringArray(value['tech_stack']) || value['tech_stack'] === undefined)
+    && (isStringArray(value['tags']) || value['tags'] === undefined)
+    && (isProjectImage(value['main_image']) || value['main_image'] === undefined)
+    && (isProjectImages(value['images']) || value['images'] === undefined)
+    && (typeof value['github_url'] === 'string' || value['github_url'] === undefined)
+    && (typeof value['demo_url'] === 'string' || value['demo_url'] === undefined)
     && typeof value['featured'] === 'boolean'
+    && typeof value['archived'] === 'boolean'
+    && typeof value['sort_order'] === 'number'
+    && isStatus(value['status'])
+  );
+}
+
+function isProjectImages(value: unknown): value is ProjectSummary['images'] {
+  return Array.isArray(value) && value.every(isProjectImage);
+}
+
+function isProjectImage(value: unknown): value is ProjectSummary['main_image'] {
+  return (
+    isRecord(value)
+    && typeof value['id'] === 'string'
+    && typeof value['url'] === 'string'
+    && (typeof value['alt_text'] === 'string' || value['alt_text'] === undefined)
+    && (typeof value['caption'] === 'string' || value['caption'] === undefined)
+    && typeof value['sort_order'] === 'number'
+  );
+}
+
+function isSkillCategory(value: unknown): value is SkillCategory {
+  return (
+    isRecord(value)
+    && typeof value['id'] === 'string'
+    && typeof value['slug'] === 'string'
+    && typeof value['name'] === 'string'
+    && (typeof value['description'] === 'string' || value['description'] === undefined)
+    && (typeof value['icon_class'] === 'string' || value['icon_class'] === undefined)
+    && typeof value['sort_order'] === 'number'
+    && isStatus(value['status'])
+  );
+}
+
+function isSkill(value: unknown): value is Skill {
+  return (
+    isRecord(value)
+    && typeof value['id'] === 'string'
+    && typeof value['category_id'] === 'string'
+    && typeof value['name'] === 'string'
+    && (typeof value['summary'] === 'string' || value['summary'] === undefined)
+    && (typeof value['icon_class'] === 'string' || value['icon_class'] === undefined)
+    && typeof value['sort_order'] === 'number'
+    && typeof value['featured'] === 'boolean'
+    && isStatus(value['status'])
+  );
+}
+
+function isTool(value: unknown): value is Tool {
+  return (
+    isRecord(value)
+    && typeof value['id'] === 'string'
+    && typeof value['name'] === 'string'
+    && typeof value['category'] === 'string'
+    && (typeof value['summary'] === 'string' || value['summary'] === undefined)
+    && (typeof value['icon_class'] === 'string' || value['icon_class'] === undefined)
+    && (isStringArray(value['tags']) || value['tags'] === undefined)
+    && typeof value['sort_order'] === 'number'
+    && typeof value['featured'] === 'boolean'
+    && isStatus(value['status'])
+  );
+}
+
+function isCertificate(value: unknown): value is Certificate {
+  return (
+    isRecord(value)
+    && typeof value['id'] === 'string'
+    && typeof value['slug'] === 'string'
+    && typeof value['title'] === 'string'
+    && typeof value['issuer'] === 'string'
+    && (typeof value['summary'] === 'string' || value['summary'] === undefined)
+    && (typeof value['description'] === 'string' || value['description'] === undefined)
+    && (typeof value['credential_url'] === 'string' || value['credential_url'] === undefined)
+    && (isCertificateImage(value['image']) || value['image'] === undefined)
+    && typeof value['featured'] === 'boolean'
+    && typeof value['sort_order'] === 'number'
+    && isStatus(value['status'])
+    && (typeof value['issued_at'] === 'string' || value['issued_at'] === undefined)
+  );
+}
+
+function isCertificateImage(value: unknown): value is CertificateImage {
+  return (
+    isRecord(value)
+    && typeof value['id'] === 'string'
+    && typeof value['url'] === 'string'
+    && (typeof value['alt_text'] === 'string' || value['alt_text'] === undefined)
+    && (typeof value['caption'] === 'string' || value['caption'] === undefined)
+  );
+}
+
+function isWorkExperience(value: unknown): value is WorkExperience {
+  return (
+    isRecord(value)
+    && typeof value['id'] === 'string'
+    && typeof value['slug'] === 'string'
+    && typeof value['title'] === 'string'
+    && typeof value['company'] === 'string'
+    && (typeof value['company_url'] === 'string' || value['company_url'] === undefined)
+    && (typeof value['employment_type'] === 'string' || value['employment_type'] === undefined)
+    && (typeof value['summary'] === 'string' || value['summary'] === undefined)
+    && (typeof value['description'] === 'string' || value['description'] === undefined)
+    && (isStringArray(value['responsibilities']) || value['responsibilities'] === undefined)
+    && typeof value['started_at'] === 'string'
+    && (typeof value['ended_at'] === 'string' || value['ended_at'] === undefined)
+    && typeof value['current'] === 'boolean'
     && typeof value['sort_order'] === 'number'
     && isStatus(value['status'])
   );

@@ -14,43 +14,43 @@ import type { SectionPageData, SectionPageLink } from '../models/section-page.mo
 
 export const projectsPageData: SectionPageData = {
   title: 'Projects',
-  summary: 'A deeper archive for selected builds, production systems, experiments, and implementation notes.',
+  summary: 'Selected builds that show practical engineering work.',
   icon: CodeFolderIcon,
 };
 
 export const workHistoryPageData: SectionPageData = {
-  title: 'Work XP',
-  summary: 'A focused timeline of roles, responsibilities, outcomes, and the operating contexts behind the work.',
+  title: 'Work History',
+  summary: 'Professional experience across teams, products, and systems.',
   icon: WorkHistoryIcon,
 };
 
 export const certificatesPageData: SectionPageData = {
   title: 'Certificates',
-  summary: 'Credential details, issuing organizations, dates, and related proof links.',
+  summary: 'Credentials that support practical engineering work.',
   icon: Certificate02Icon,
 };
 
 export const skillsPageData: SectionPageData = {
-  title: 'Skills',
-  summary: 'A structured view of engineering strengths, practical tools, delivery, quality, and AI workflows.',
+  title: 'Skills and Tools',
+  summary: 'Technologies and tools used to build reliable products.',
   icon: BrainCogIcon,
 };
 
 export const musicPageData: SectionPageData = {
   title: 'Music',
-  summary: 'Recently played tracks, albums, and listening notes from the entertainment side of the portfolio.',
+  summary: 'Tracks and listening notes.',
   icon: MusicNote01Icon,
 };
 
 export const gamesPageData: SectionPageData = {
   title: 'Games',
-  summary: 'Games in rotation, platforms, and play notes from the entertainment side of the portfolio.',
+  summary: 'Games and play notes.',
   icon: GameController01Icon,
 };
 
 export const animesPageData: SectionPageData = {
   title: 'Animes',
-  summary: 'Anime watchlist, favorites, and viewing notes from the entertainment side of the portfolio.',
+  summary: 'Anime watchlist and notes.',
   icon: Film01Icon,
 };
 
@@ -62,12 +62,16 @@ export const etcPageData: SectionPageData = {
 
 export const socialLinksPageData: SectionPageData = {
   title: 'Social Links',
-  summary: 'LinkedIn and other professional profiles collected in one place.',
+  summary: 'Profiles and contact links.',
   icon: LinkSquare02Icon,
   links: [
     {
       label: 'LinkedIn',
       url: 'https://www.linkedin.com/in/eralmendral',
+    },
+    {
+      label: 'GitHub',
+      url: 'https://github.com/eralmendral',
     },
   ],
 };
