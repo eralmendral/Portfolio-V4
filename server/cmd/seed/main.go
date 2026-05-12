@@ -472,7 +472,7 @@ func sampleProjects() []projects.Project {
 			"/assets/migrated/projects/cyclistian/orders.png",
 			"/assets/migrated/projects/cyclistian/thumbnail.png",
 			"/assets/migrated/projects/cyclistian/visitus.png"),
-		migratedProject("3", "Haru Queue Ordering", "Restaurant ordering PWA for table-side ordering, kitchen queue management, and admin monitoring across active tables.", "", "https://harux-queue-ordering.vercel.app/", "", "", "/assets/migrated/projects/haru-queue-ordering/user_menu.png", 3, "2023-07-15 03:14:15.678173+00", false,
+		migratedProject("3", "HaruX", "Restaurant ordering PWA for table-side ordering, kitchen queue management, and admin monitoring across active tables.", "", "https://harux-queue-ordering.vercel.app/", "", "", "/assets/migrated/projects/haru-queue-ordering/user_menu.png", 3, "2023-07-15 03:14:15.678173+00", false,
 			"/assets/migrated/projects/haru-queue-ordering/admin_chickens.png",
 			"/assets/migrated/projects/haru-queue-ordering/admin_dashboard.png",
 			"/assets/migrated/projects/haru-queue-ordering/admin_order_detail.png",
