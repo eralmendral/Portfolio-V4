@@ -528,6 +528,8 @@ func sampleCertificateIDsForCleanup() []string {
 		"go-api-certificate",
 		"sample-cloud-deployment-certificate",
 		"cloud-deployment-certificate",
+		"mangtas-full-stack-engineer-certificate",
+		"full-stack-engineer-certificate",
 		"migrated-certificate-1",
 		"introduction-to-containers",
 	}
@@ -540,8 +542,32 @@ func sampleCertificateIDsForCleanup() []string {
 }
 
 func sampleCertificates() []certificates.Certificate {
+	mangtasIssuedAt := time.Date(2023, time.November, 9, 20, 53, 0, 0, time.UTC)
 	createdAt := mustParseCSVTimestamp("2024-08-24 02:44:45.510773+00")
 	seedCertificates := []certificates.Certificate{
+		{
+			ID:            "mangtas-full-stack-engineer-certificate",
+			Slug:          "full-stack-engineer-certificate",
+			Title:         "Full Stack Engineer Certificate",
+			Issuer:        "Mangtas",
+			Summary:       "Full Stack Engineer assessment certificate from Mangtas.",
+			Description:   "Completed the Mangtas Full Stack Engineer test.",
+			CredentialURL: "https://storage.mangtas.com/public/certificates/FS-cert-6740401-Eric-Frank_Almendral-09-11-23_20_53.pdf?%20_hsmi=215420480",
+			Image: &certificates.CertificateImage{
+				ID:         "mangtas-full-stack-engineer-certificate-image",
+				URL:        "/assets/migrated/certificates/mangtas-full-stack-certificate.png",
+				AltText:    "Full Stack Engineer Certificate from Mangtas",
+				Caption:    "Full Stack Engineer Certificate",
+				Width:      792,
+				Height:     612,
+				UploadedAt: mangtasIssuedAt,
+			},
+			Featured:  true,
+			SortOrder: 0,
+			Status:    certificates.StatusPublished,
+			IssuedAt:  &mangtasIssuedAt,
+			CreatedAt: mangtasIssuedAt,
+		},
 		{
 			ID:            "migrated-certificate-1",
 			Slug:          "introduction-to-containers",
