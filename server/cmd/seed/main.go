@@ -523,7 +523,7 @@ func sampleProjects() []projects.Project {
 }
 
 func sampleCertificateIDsForCleanup() []string {
-	return []string{
+	ids := []string{
 		"sample-go-api-certificate",
 		"go-api-certificate",
 		"sample-cloud-deployment-certificate",
@@ -531,11 +531,17 @@ func sampleCertificateIDsForCleanup() []string {
 		"migrated-certificate-1",
 		"introduction-to-containers",
 	}
+
+	for _, certificate := range bootdevCertificates() {
+		ids = append(ids, certificate.ID, certificate.Slug)
+	}
+
+	return ids
 }
 
 func sampleCertificates() []certificates.Certificate {
 	createdAt := mustParseCSVTimestamp("2024-08-24 02:44:45.510773+00")
-	return []certificates.Certificate{
+	seedCertificates := []certificates.Certificate{
 		{
 			ID:            "migrated-certificate-1",
 			Slug:          "introduction-to-containers",
@@ -553,6 +559,62 @@ func sampleCertificates() []certificates.Certificate {
 			CreatedAt: createdAt,
 		},
 	}
+
+	seedCertificates = append(seedCertificates, bootdevCertificates()...)
+	return seedCertificates
+}
+
+func bootdevCertificates() []certificates.Certificate {
+	seeds := bootdevCertificateSeeds()
+	certificatesFromCSV := make([]certificates.Certificate, 0, len(seeds))
+	for index, seed := range seeds {
+		createdAt := parseOptionalSeedTime(seed.createdAt)
+		certificate := certificates.Certificate{
+			ID:            "bootdev-certificate-" + seed.sourceID,
+			Slug:          seedSlugify("bootdev " + seed.sourceID + " " + seed.title),
+			Title:         seed.title,
+			Issuer:        seed.issuer,
+			Summary:       seed.summary,
+			Description:   seed.description,
+			CredentialURL: seed.credentialURL,
+			SortOrder:     index + 2,
+			Status:        certificates.StatusPublished,
+			CreatedAt:     createdAt,
+			UpdatedAt:     createdAt,
+		}
+		issuedAt := parseOptionalSeedTime(seed.issuedAt)
+		if !issuedAt.IsZero() {
+			certificate.IssuedAt = &issuedAt
+		}
+
+		if seed.imageURL != "" {
+			certificate.Image = &certificates.CertificateImage{
+				ID:         certificate.ID + "-image",
+				URL:        seed.imageURL,
+				AltText:    seed.imageAlt,
+				Caption:    seed.title,
+				Width:      seed.imageWidth,
+				Height:     seed.imageHeight,
+				UploadedAt: createdAt,
+			}
+		}
+
+		certificatesFromCSV = append(certificatesFromCSV, certificate)
+	}
+
+	return certificatesFromCSV
+}
+
+func parseOptionalSeedTime(value string) time.Time {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}
+	}
+	parsed, err := time.Parse(time.RFC3339Nano, value)
+	if err != nil {
+		return time.Time{}
+	}
+	return parsed
 }
 
 func migratedProject(sourceID string, title string, description string, githubURL string, demoURL string, tags string, tools string, thumbnail string, sortOrder int, createdAt string, archived bool, galleryImages ...string) projects.Project {
