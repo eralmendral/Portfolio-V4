@@ -1,4 +1,5 @@
 import {
+  ArchiveIcon,
   BrainCogIcon,
   Certificate02Icon,
   CodeFolderIcon,
@@ -16,6 +17,12 @@ export const projectsPageData: SectionPageData = {
   title: 'Projects',
   summary: 'Selected builds that show practical engineering work.',
   icon: CodeFolderIcon,
+};
+
+export const archivedProjectsPageData: SectionPageData = {
+  title: 'Archived Projects',
+  summary: 'Older builds and experiments kept for reference.',
+  icon: ArchiveIcon,
 };
 
 export const workHistoryPageData: SectionPageData = {

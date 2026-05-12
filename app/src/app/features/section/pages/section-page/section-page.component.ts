@@ -1,10 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ChangeDetectionStrategy, Component, HostListener, computed, inject, resource, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HugeiconsIconComponent } from '@hugeicons/angular';
-import { ArrowUpDownIcon } from '@hugeicons-pro/core-stroke-rounded';
+import {
+  ArchiveIcon,
+  ArrowLeft02Icon,
+  ArrowRight02Icon,
+  ArrowUpDownIcon,
+  Cancel01Icon,
+} from '@hugeicons-pro/core-stroke-rounded';
 
 import type {
   Certificate,
+  ProjectImage,
   ProjectSummary,
   Skill,
   SkillCategory,
@@ -23,7 +30,7 @@ interface SkillsPageContent {
 
 @Component({
   selector: 'app-section-page',
-  imports: [HugeiconsIconComponent],
+  imports: [HugeiconsIconComponent, RouterLink],
   template: `
     <main
       class="SectionPage"
@@ -61,12 +68,26 @@ interface SkillsPageContent {
               @for (project of projectsResource.value(); track project.id) {
                 <article class="SectionCard ProjectCard">
                   @if (project.main_image; as image) {
-                    <img [src]="image.url" [alt]="image.alt_text || project.title" loading="lazy">
+                    <button
+                      class="ProjectImageButton ProjectImageButtonMain"
+                      type="button"
+                      [attr.aria-label]="projectImageButtonLabel(project, image)"
+                      (click)="openProjectLightbox(project, image, $event)"
+                    >
+                      <img [src]="image.url" [alt]="image.alt_text || project.title" loading="lazy">
+                    </button>
                   }
                   @if (project.images?.length) {
                     <div class="ProjectGallery" aria-label="Additional project screenshots">
                       @for (image of project.images; track image.id) {
-                        <img [src]="image.url" [alt]="image.alt_text || project.title" loading="lazy">
+                        <button
+                          class="ProjectImageButton ProjectThumbnailButton"
+                          type="button"
+                          [attr.aria-label]="projectImageButtonLabel(project, image)"
+                          (click)="openProjectLightbox(project, image, $event)"
+                        >
+                          <img [src]="image.url" [alt]="image.alt_text || project.title" loading="lazy">
+                        </button>
                       }
                     </div>
                   }
@@ -95,15 +116,20 @@ interface SkillsPageContent {
               }
             </div>
           }
-          <nav class="SectionLinks" aria-label="Project archive">
-            <ul>
-              <li>
-                <a href="" (click)="toggleArchivedProjects($event)">
-                  {{ showArchivedProjects() ? 'Active projects' : 'archived' }}
-                </a>
-              </li>
-            </ul>
-          </nav>
+          @if (!isArchivedProjectsPage) {
+            <nav class="ProjectArchiveNav" aria-label="Project archive">
+              <a class="ProjectArchiveLink" routerLink="/projects/archived">
+                <hugeicons-icon
+                  [icon]="archiveIcon"
+                  [size]="16"
+                  color="currentColor"
+                  [strokeWidth]="2.2"
+                  aria-hidden="true"
+                />
+                <span>Archived Projects</span>
+              </a>
+            </nav>
+          }
         </section>
       }
 
@@ -253,6 +279,87 @@ interface SkillsPageContent {
         </section>
       }
     </main>
+
+    @if (activeProjectImage(); as activeImage) {
+      <div
+        class="ProjectLightbox"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="activeProjectTitle() + ' screenshots'"
+        (click)="closeProjectLightbox()"
+      >
+        <section class="ProjectLightboxPanel" (click)="$event.stopPropagation()">
+          <div class="ProjectLightboxTop">
+            <div>
+              <p class="ProjectLightboxEyebrow">Project image</p>
+              <h2>{{ activeProjectTitle() }}</h2>
+            </div>
+            <button
+              class="ProjectLightboxIconButton"
+              type="button"
+              aria-label="Close image viewer"
+              (click)="closeProjectLightbox()"
+            >
+              <hugeicons-icon
+                [icon]="closeIcon"
+                [size]="22"
+                color="currentColor"
+                [strokeWidth]="2.2"
+                aria-hidden="true"
+              />
+            </button>
+          </div>
+
+          <div class="ProjectLightboxImageWrap">
+            @if (hasMultipleProjectImages()) {
+              <button
+                class="ProjectLightboxNav ProjectLightboxNavPrev"
+                type="button"
+                aria-label="Previous image"
+                (click)="showPreviousProjectImage()"
+              >
+                <hugeicons-icon
+                  [icon]="previousIcon"
+                  [size]="24"
+                  color="currentColor"
+                  [strokeWidth]="2.2"
+                  aria-hidden="true"
+                />
+              </button>
+            }
+
+            <img
+              [src]="activeImage.url"
+              [alt]="activeImage.alt_text || activeProjectTitle()"
+            >
+
+            @if (hasMultipleProjectImages()) {
+              <button
+                class="ProjectLightboxNav ProjectLightboxNavNext"
+                type="button"
+                aria-label="Next image"
+                (click)="showNextProjectImage()"
+              >
+                <hugeicons-icon
+                  [icon]="nextIcon"
+                  [size]="24"
+                  color="currentColor"
+                  [strokeWidth]="2.2"
+                  aria-hidden="true"
+                />
+              </button>
+            }
+          </div>
+
+          <footer class="ProjectLightboxFooter">
+            <p>{{ activeProjectImageCaption() }}</p>
+            @if (hasMultipleProjectImages()) {
+              <span>{{ activeProjectImageIndex() + 1 }} / {{ activeProjectImages().length }}</span>
+            }
+          </footer>
+        </section>
+      </div>
+    }
   `,
   styles: [`
     :host {
@@ -468,6 +575,25 @@ interface SkillsPageContent {
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     }
 
+    .ProjectArchiveNav {
+      margin-block-start: 28px;
+    }
+
+    .ProjectArchiveLink {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--app-heading);
+      font-size: 14px;
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .ProjectArchiveLink:hover {
+      text-decoration: underline;
+      text-underline-offset: 5px;
+    }
+
     .SkillGrid {
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       align-items: start;
@@ -657,7 +783,43 @@ interface SkillsPageContent {
       padding: 0 18px 18px;
     }
 
-    .ProjectCard > img {
+    .ProjectImageButton {
+      border: 1px solid color-mix(in srgb, var(--app-heading) 12%, transparent);
+      background: color-mix(in srgb, var(--app-background) 88%, var(--app-heading) 7%);
+      color: inherit;
+      display: block;
+      padding: 0;
+      cursor: zoom-in;
+    }
+
+    .ProjectImageButton:focus-visible,
+    .ProjectLightboxIconButton:focus-visible,
+    .ProjectLightboxNav:focus-visible {
+      outline: 3px solid var(--app-toggle-focus);
+      outline-offset: 3px;
+    }
+
+    .ProjectImageButton img {
+      display: block;
+      filter: grayscale(0.72) saturate(0.58) contrast(1.02) brightness(1.02);
+      transition:
+        filter 180ms ease,
+        opacity 160ms ease,
+        transform 180ms ease;
+    }
+
+    .ProjectImageButton:hover img,
+    .ProjectImageButton:focus-visible img {
+      filter: grayscale(0) saturate(1) contrast(1) brightness(1);
+      opacity: 0.9;
+      transform: scale(1.015);
+    }
+
+    .ProjectImageButtonMain {
+      overflow: hidden;
+    }
+
+    .ProjectImageButtonMain img {
       width: 100%;
       aspect-ratio: 16 / 9;
       object-fit: cover;
@@ -671,12 +833,140 @@ interface SkillsPageContent {
       padding: 4px 4px 0;
     }
 
-    .ProjectGallery img {
+    .ProjectThumbnailButton {
+      overflow: hidden;
+      border-radius: 4px;
+    }
+
+    .ProjectThumbnailButton img {
       width: 100%;
       aspect-ratio: 4 / 3;
       object-fit: cover;
-      border-radius: 4px;
       background: color-mix(in srgb, var(--app-heading) 8%, transparent);
+    }
+
+    .ProjectLightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(10, 10, 10, 0.74);
+    }
+
+    .ProjectLightboxPanel {
+      width: min(100%, 1040px);
+      max-height: calc(100dvh - 48px);
+      border: 1px solid color-mix(in srgb, #ffffff 20%, transparent);
+      border-radius: 8px;
+      background: var(--app-page-bg);
+      color: var(--app-heading);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      overflow: hidden;
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
+    }
+
+    .ProjectLightboxTop,
+    .ProjectLightboxFooter {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px 18px;
+    }
+
+    .ProjectLightboxTop h2,
+    .ProjectLightboxTop p,
+    .ProjectLightboxFooter p {
+      margin: 0;
+    }
+
+    .ProjectLightboxTop h2 {
+      color: var(--app-heading);
+      font-size: 18px;
+      font-weight: 850;
+      line-height: 1.2;
+    }
+
+    .ProjectLightboxEyebrow {
+      color: var(--app-muted);
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .ProjectLightboxIconButton,
+    .ProjectLightboxNav {
+      border: 0;
+      background: transparent;
+      color: var(--app-heading);
+      display: grid;
+      place-items: center;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .ProjectLightboxIconButton {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+    }
+
+    .ProjectLightboxImageWrap {
+      position: relative;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      background: color-mix(in srgb, var(--app-heading) 5%, transparent);
+      overflow: hidden;
+    }
+
+    .ProjectLightboxImageWrap img {
+      width: 100%;
+      height: 100%;
+      max-height: calc(100dvh - 190px);
+      object-fit: contain;
+      display: block;
+    }
+
+    .ProjectLightboxNav {
+      position: absolute;
+      inset-block-start: 50%;
+      z-index: 1;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--app-page-bg) 88%, transparent);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+      transform: translateY(-50%);
+    }
+
+    .ProjectLightboxNavPrev {
+      inset-inline-start: 14px;
+    }
+
+    .ProjectLightboxNavNext {
+      inset-inline-end: 14px;
+    }
+
+    .ProjectLightboxFooter {
+      color: var(--app-copy);
+    }
+
+    .ProjectLightboxFooter p {
+      max-width: none;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .ProjectLightboxFooter span {
+      flex: 0 0 auto;
+      color: var(--app-muted);
+      font-size: 12px;
+      font-weight: 850;
     }
 
     .CardLinks {
@@ -859,6 +1149,34 @@ interface SkillsPageContent {
         text-align: start;
       }
 
+      .ProjectLightbox {
+        align-items: stretch;
+        padding: 0;
+      }
+
+      .ProjectLightboxPanel {
+        width: 100%;
+        max-height: 100dvh;
+        min-height: 100dvh;
+        border: 0;
+        border-radius: 0;
+      }
+
+      .ProjectLightboxTop,
+      .ProjectLightboxFooter {
+        padding-inline: 16px;
+      }
+
+      .ProjectLightboxImageWrap img {
+        max-height: calc(100dvh - 190px);
+      }
+
+      .ProjectLightboxNav {
+        inset-block-start: auto;
+        inset-block-end: 14px;
+        transform: none;
+      }
+
       .WorkCard {
         margin-inline-start: 22px;
         padding: 18px;
@@ -905,16 +1223,24 @@ export class SectionPageComponent {
   private readonly portfolioApi = inject(PortfolioApi);
   private readonly currentPath = this.route.snapshot.routeConfig?.path;
   private readonly workSortDirection = signal<'asc' | 'desc'>('desc');
-  protected readonly showArchivedProjects = signal(false);
+  private lightboxReturnTarget: HTMLElement | null = null;
   protected readonly skillSearchQuery = signal('');
+  protected readonly activeProject = signal<ProjectSummary | null>(null);
+  protected readonly activeProjectImageIndex = signal(0);
   protected readonly sortIcon = ArrowUpDownIcon;
+  protected readonly archiveIcon = ArchiveIcon;
+  protected readonly closeIcon = Cancel01Icon;
+  protected readonly previousIcon = ArrowLeft02Icon;
+  protected readonly nextIcon = ArrowRight02Icon;
   protected readonly isSocialLinksPage = this.route.snapshot.routeConfig?.path === 'social-links';
   protected readonly isSkillsPage = this.currentPath === 'skills';
   protected readonly isCertificatesPage = this.currentPath === 'certificates';
   protected readonly isWorkHistoryPage = this.currentPath === 'work-history';
-  protected readonly isProjectsPage = this.currentPath === 'projects';
+  protected readonly isArchivedProjectsPage = this.currentPath === 'projects/archived';
+  protected readonly isProjectsPage = this.currentPath === 'projects' || this.isArchivedProjectsPage;
   protected readonly isTopAlignedPage = [
     'projects',
+    'projects/archived',
     'work-history',
     'certificates',
     'skills',
@@ -944,7 +1270,7 @@ export class SectionPageComponent {
   });
   protected readonly projectsResource = resource({
     defaultValue: [] as ProjectSummary[],
-    params: () => ({ archived: this.showArchivedProjects() }),
+    params: () => ({ archived: this.isArchivedProjectsPage }),
     loader: ({ abortSignal, params }) => {
       if (!this.isProjectsPage) {
         return Promise.resolve([]);
@@ -1054,6 +1380,14 @@ export class SectionPageComponent {
       return direction * (leftTime - rightTime);
     })
   ));
+  protected readonly activeProjectImages = computed(() => {
+    const project = this.activeProject();
+
+    return project ? this.projectImages(project) : [];
+  });
+  protected readonly activeProjectImage = computed(() => (
+    this.activeProjectImages()[this.activeProjectImageIndex()]
+  ));
 
   protected workSortLabel(): string {
     return this.workSortDirection() === 'desc'
@@ -1065,14 +1399,113 @@ export class SectionPageComponent {
     this.workSortDirection.update((direction) => (direction === 'desc' ? 'asc' : 'desc'));
   }
 
+  protected projectImages(project: ProjectSummary): ProjectImage[] {
+    const images = [
+      project.main_image,
+      ...(project.images ?? []),
+    ].filter((image): image is ProjectImage => Boolean(image));
+    const seen = new Set<string>();
+
+    return images
+      .filter((image) => {
+        const key = image.id || image.url;
+
+        if (seen.has(key)) {
+          return false;
+        }
+
+        seen.add(key);
+        return true;
+      })
+      .sort((left, right) => left.sort_order - right.sort_order);
+  }
+
+  protected projectImageButtonLabel(project: ProjectSummary, image: ProjectImage): string {
+    return `View ${image.caption || image.alt_text || project.title} screenshot`;
+  }
+
+  protected openProjectLightbox(project: ProjectSummary, image: ProjectImage, event: Event): void {
+    const images = this.projectImages(project);
+    const imageIndex = Math.max(0, images.findIndex((candidate) => (
+      candidate.id === image.id || candidate.url === image.url
+    )));
+
+    this.lightboxReturnTarget = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    this.activeProject.set(project);
+    this.activeProjectImageIndex.set(imageIndex);
+  }
+
+  protected closeProjectLightbox(): void {
+    this.activeProject.set(null);
+    this.activeProjectImageIndex.set(0);
+
+    window.setTimeout(() => {
+      this.lightboxReturnTarget?.focus();
+      this.lightboxReturnTarget = null;
+    });
+  }
+
+  protected hasMultipleProjectImages(): boolean {
+    return this.activeProjectImages().length > 1;
+  }
+
+  protected activeProjectTitle(): string {
+    return this.activeProject()?.title ?? 'Project';
+  }
+
+  protected activeProjectImageCaption(): string {
+    const image = this.activeProjectImage();
+
+    return image?.caption || image?.alt_text || this.activeProjectTitle();
+  }
+
+  protected showPreviousProjectImage(): void {
+    const images = this.activeProjectImages();
+
+    if (images.length < 2) {
+      return;
+    }
+
+    this.activeProjectImageIndex.update((index) => (index + images.length - 1) % images.length);
+  }
+
+  protected showNextProjectImage(): void {
+    const images = this.activeProjectImages();
+
+    if (images.length < 2) {
+      return;
+    }
+
+    this.activeProjectImageIndex.update((index) => (index + 1) % images.length);
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  protected handleProjectLightboxKeydown(event: KeyboardEvent): void {
+    if (!this.activeProject()) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeProjectLightbox();
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.showPreviousProjectImage();
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.showNextProjectImage();
+    }
+  }
+
   protected updateSkillSearch(event: Event): void {
     const input = event.target instanceof HTMLInputElement ? event.target.value : '';
     this.skillSearchQuery.set(input);
-  }
-
-  protected toggleArchivedProjects(event: Event): void {
-    event.preventDefault();
-    this.showArchivedProjects.update((showArchived) => !showArchived);
   }
 
   protected filteredSkillsForCategory(category: SkillCategory): Skill[] {

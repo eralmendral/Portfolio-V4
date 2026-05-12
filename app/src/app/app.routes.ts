@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import {
   animesPageData,
+  archivedProjectsPageData,
   certificatesPageData,
   etcPageData,
   gamesPageData,
@@ -35,6 +36,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/section/pages/section-page/section-page.component')
       .then((m) => m.SectionPageComponent),
     data: projectsPageData,
+  },
+  {
+    path: 'projects/archived',
+    loadComponent: () => import('./features/section/pages/section-page/section-page.component')
+      .then((m) => m.SectionPageComponent),
+    data: archivedProjectsPageData,
   },
   {
     path: 'work-history',
