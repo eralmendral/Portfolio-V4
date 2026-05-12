@@ -181,10 +181,12 @@ func main() {
 
 	linkSamples := sampleLinks()
 	validateSampleLimit("links", len(linkSamples))
-	for _, link := range linkSamples {
-		if err := deleteLinkIfExists(ctx, linkStore, link.ID); err != nil {
-			log.Fatalf("delete link sample %q: %v", link.ID, err)
+	for _, id := range sampleLinkIDsForCleanup() {
+		if err := deleteLinkIfExists(ctx, linkStore, id); err != nil {
+			log.Fatalf("delete link sample %q: %v", id, err)
 		}
+	}
+	for _, link := range linkSamples {
 		if _, err := linkStore.Create(ctx, link); err != nil {
 			log.Fatalf("create link sample %q: %v", link.ID, err)
 		}
@@ -713,39 +715,64 @@ func sampleSkills() []skills.Skill {
 }
 
 func sampleLinks() []links.Link {
-	createdAt := time.Date(2026, time.May, 10, 9, 0, 0, 0, time.UTC)
+	stackOverflowCreatedAt := time.Date(2024, time.August, 24, 3, 11, 29, 705816000, time.UTC)
+	youtubeCreatedAt := time.Date(2024, time.August, 24, 3, 12, 15, 111039000, time.UTC)
+	hackerRankCreatedAt := time.Date(2024, time.August, 24, 3, 12, 46, 201188000, time.UTC)
+	dribbbleCreatedAt := time.Date(2024, time.August, 24, 3, 13, 17, 242522000, time.UTC)
 
 	return []links.Link{
 		{
-			ID:        "sample-link-github",
-			Label:     "GitHub",
-			URL:       "https://github.com/eralmendral",
-			IconClass: "hugeicons-pro:github",
-			SortOrder: 10,
-			Star:      true,
-			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
-		},
-		{
-			ID:        "sample-link-linkedin",
-			Label:     "LinkedIn",
-			URL:       "https://www.linkedin.com/in/eralmendral",
-			IconClass: "hugeicons-pro:linkedin-01",
-			SortOrder: 20,
+			ID:        "sample-link-stack-overflow",
+			Label:     "Stack Overflow",
+			URL:       "https://stackoverflow.com/",
+			IconClass: "hugeicons-pro:stack-overflow",
+			SortOrder: 1,
 			Star:      false,
 			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
+			CreatedAt: stackOverflowCreatedAt,
 		},
 		{
-			ID:        "sample-link-resume",
-			Label:     "Resume",
-			URL:       "/assets/cv.pdf",
-			IconClass: "hugeicons-pro:file-star",
-			SortOrder: 30,
-			Star:      true,
+			ID:        "sample-link-youtube",
+			Label:     "Youtube",
+			URL:       "https://youtube.com",
+			IconClass: "hugeicons-pro:youtube",
+			SortOrder: 2,
+			Star:      false,
 			Status:    links.StatusPublished,
-			CreatedAt: createdAt,
+			CreatedAt: youtubeCreatedAt,
 		},
+		{
+			ID:        "sample-link-hackerrank",
+			Label:     "HackerRank",
+			URL:       "https://www.hackerrank.com/profile/eralmendral",
+			IconClass: "hugeicons-pro:hackerrank",
+			SortOrder: 3,
+			Star:      false,
+			Status:    links.StatusPublished,
+			CreatedAt: hackerRankCreatedAt,
+		},
+		{
+			ID:        "sample-link-dribbble",
+			Label:     "Dribbble",
+			URL:       "https://dribbble.com/",
+			IconClass: "hugeicons-pro:dribbble",
+			SortOrder: 4,
+			Star:      false,
+			Status:    links.StatusPublished,
+			CreatedAt: dribbbleCreatedAt,
+		},
+	}
+}
+
+func sampleLinkIDsForCleanup() []string {
+	return []string{
+		"sample-link-github",
+		"sample-link-linkedin",
+		"sample-link-resume",
+		"sample-link-stack-overflow",
+		"sample-link-youtube",
+		"sample-link-hackerrank",
+		"sample-link-dribbble",
 	}
 }
 
