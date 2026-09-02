@@ -35,6 +35,11 @@ export class App {
 
     return path === '/login' || path.startsWith('/admin');
   });
+  protected readonly isAdminLayout = computed(() => {
+    const path = this.currentUrl().split('?')[0].split('#')[0];
+
+    return path.startsWith('/admin');
+  });
 
   constructor() {
     this.router.events

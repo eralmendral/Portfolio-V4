@@ -1,8 +1,200 @@
-<main class="AdminPage" aria-labelledby="admin-title">
-  <section class="AdminPanel">
-    <p class="Eyebrow">Admin</p>
-    <h1 id="admin-title">Workspace</h1>
-    <p>Authenticated content tools will live here as the admin interface is built out.</p>
-    <button type="button" (click)="signOut()">Sign out</button>
+@if (booting()) {
+  <div class="Boot" role="status" aria-live="polite">
+    <div class="BootMark" aria-hidden="true"><i></i><i></i></div>
+    <p>INITIALIZING PERSONAL LABORATORY</p>
+    <span><i></i></span>
+    <small>CONNECTING KNOWLEDGE TOPOLOGY / 05 DOMAINS</small>
+  </div>
+}
+
+<main
+  class="AdminPage"
+  [class.IsBooting]="booting()"
+  [class.MotionPaused]="motionPaused()"
+  [attr.inert]="selectedLab() ? '' : null"
+  aria-labelledby="admin-title"
+>
+  <header class="Topbar">
+    <div class="Brand">
+      <i aria-hidden="true"></i>
+      <span><b>PERSONAL LABORATORY</b><small>INTERNAL KNOWLEDGE SYSTEM / PL–01</small></span>
+    </div>
+    <div class="TopbarMeta">
+      <span class="Online"><i aria-hidden="true"></i>SYSTEM / ONLINE</span>
+      <button type="button" (click)="toggleMotion()" [attr.aria-pressed]="motionPaused()">
+        {{ motionPaused() ? 'RESUME MOTION' : 'PAUSE MOTION' }}
+      </button>
+      <button type="button" (click)="signOut()">SIGN OUT</button>
+    </div>
+  </header>
+
+  <section
+    class="Network"
+    aria-label="Laboratory knowledge network"
+    [style.--parallax-x]="parallax().x"
+    [style.--parallax-y]="parallax().y"
+    (pointermove)="updateParallax($event)"
+    (pointerleave)="resetParallax()"
+  >
+    <div class="Grid" aria-hidden="true"></div>
+    <div class="ParticleField" aria-hidden="true"></div>
+    <div class="SceneLayer">
+      <svg class="Connections" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        @for (connection of connections; track connection.id) {
+          <g
+            class="Connection"
+            [class.IsActive]="isConnectionActive(connection.sourceId, connection.targetId)"
+            [class.IsDimmed]="hoveredLabId() && !isConnectionActive(connection.sourceId, connection.targetId)"
+            [style.--connection-index]="connection.index"
+          >
+            <line
+              class="ConnectionBase"
+              [attr.x1]="connection.source.x"
+              [attr.y1]="connection.source.y"
+              x2="50"
+              y2="55"
+            />
+            <line
+              class="ConnectionSignal"
+              [attr.x1]="connection.source.x"
+              [attr.y1]="connection.source.y"
+              x2="50"
+              y2="55"
+            />
+            <line
+              class="ConnectionBase"
+              x1="50"
+              y1="55"
+              [attr.x2]="connection.target.x"
+              [attr.y2]="connection.target.y"
+            />
+            <line
+              class="ConnectionSignal ConnectionSignalReverse"
+              x1="50"
+              y1="55"
+              [attr.x2]="connection.target.x"
+              [attr.y2]="connection.target.y"
+            />
+          </g>
+        }
+      </svg>
+
+      <section class="Core" aria-label="Personal Laboratory core">
+        <div class="Orbit" aria-hidden="true"></div>
+        <div class="CoreCopy">
+          <p>ECOSYSTEM / 001</p>
+          <h1 id="admin-title"><span>PERSONAL</span> LABORATORY</h1>
+          <small>ONE EVOLVING INTELLIGENCE</small>
+        </div>
+      </section>
+
+      @for (lab of labs; track lab.id; let index = $index) {
+        <article
+          class="LabNode"
+          [class.LabNodeKnowledge]="lab.id === 'knowledge'"
+          [class.IsHovered]="hoveredLabId() === lab.id"
+          [style.--x]="lab.x + '%'"
+          [style.--y]="lab.y + '%'"
+          [style.--accent]="lab.color"
+          [style.--i]="index"
+        >
+          <button
+            type="button"
+            (click)="openLab(lab, $event.currentTarget)"
+            (pointerenter)="setHoveredLab(lab)"
+            (pointerleave)="setHoveredLab(null)"
+            (focus)="setHoveredLab(lab)"
+            (blur)="setHoveredLab(null)"
+            [attr.aria-label]="'Open ' + lab.name + ': ' + lab.description"
+          >
+            <small>{{ lab.code }}<i aria-hidden="true"></i></small>
+            <strong>{{ lab.name }}</strong>
+            <em>{{ lab.state }} / ACTIVE</em>
+            <span class="NodeDescription">{{ lab.description }}</span>
+          </button>
+        </article>
+      }
+    </div>
+
+    <div class="Caption">
+      <b>KNOWLEDGE TOPOLOGY</b>
+      <p>{{ hoveredLab()?.connection || 'Select a laboratory to inspect its operating layer.' }}</p>
+    </div>
+    <div class="Coordinates" aria-hidden="true">35° 41' N / 139° 41' E<br />NODE FIELD / 05</div>
   </section>
+
+  <footer class="Statusbar">
+    <span><b>05</b> ACTIVE DOMAINS</span>
+    <span><b>01</b> KNOWLEDGE BACKBONE</span>
+    <span>ADMIN WORKSPACE / <b>LIVE</b></span>
+  </footer>
 </main>
+
+@if (selectedLab(); as lab) {
+  <button class="Backdrop" type="button" aria-label="Close laboratory details" (click)="closeLab()"></button>
+  <aside
+    class="LabPanel"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="lab.id + '-panel-title'"
+    [style.--panel-accent]="lab.color"
+  >
+    <header>
+      <span>{{ lab.code }} / DOMAIN RECORD</span>
+      <button data-panel-close type="button" aria-label="Close laboratory details" (click)="closeLab()">×</button>
+    </header>
+    <div class="PanelBody">
+      <p class="PanelKicker">{{ lab.state }} SYSTEM / ACTIVE</p>
+      <h2 [id]="lab.id + '-panel-title'">{{ lab.name }}</h2>
+      <p class="Mission">{{ lab.mission }}</p>
+      <section>
+        <h3>Purpose</h3>
+        <p>{{ lab.purpose }}</p>
+      </section>
+      <section>
+        <h3>Core Areas</h3>
+        <div class="Tags">
+          @for (area of lab.areas; track area) { <span>{{ area }}</span> }
+        </div>
+      </section>
+      <section>
+        <h3>Operating Tools</h3>
+        <div class="Tools">
+          @for (tool of lab.tools; track tool.name) {
+            <article><b>{{ tool.name }}</b><span>{{ tool.role }}</span></article>
+          }
+        </div>
+      </section>
+      <div class="PanelColumns">
+        <section>
+          <h3>Inputs</h3>
+          <ul>
+            @for (input of lab.inputs; track input) { <li>{{ input }}</li> }
+          </ul>
+        </section>
+        <section>
+          <h3>Outputs</h3>
+          <ul>
+            @for (output of lab.outputs; track output) { <li>{{ output }}</li> }
+          </ul>
+        </section>
+      </div>
+      <section>
+        <h3>Current Projects</h3>
+        <ol class="Projects">
+          @for (project of lab.projects; track project; let index = $index) {
+            <li><span>{{ (index + 1).toString().padStart(2, '0') }}</span>{{ project }}</li>
+          }
+        </ol>
+      </section>
+      <section class="ConnectionNote">
+        <h3>Knowledge Connection</h3>
+        <p>{{ lab.connection }}</p>
+      </section>
+      <section class="Future">
+        <h3>Future Capability</h3>
+        <p>{{ lab.future }}</p>
+      </section>
+    </div>
+  </aside>
+}
